@@ -22,7 +22,7 @@ public:
 		SET_DESCRIPTOR    = 0x07,
 		GET_CONFIGURATION = 0x08,
 		SET_CONFIGURATION = 0x09,
-	};
+	}
 
 	enum class INTERFACE_REQUEST : uint8_t
 	{
@@ -31,7 +31,7 @@ public:
 		SET_FEATURE = 0x03,
 		GET_INTERFACE = 0x0A,
 		SET_INTERFACE = 0x11,
-	};
+	}
 
 	enum class ENDPOINT_REQUEST : uint8_t
 	{
@@ -39,27 +39,27 @@ public:
 		CLEAR_FEATURE = 0x01,
 		SET_FEATURE = 0x03,
 		SYNC_FRAME = 0x0A,
-	};
+	}
 
-	bool serialize(Setup_packet_array* const out_array)
+	bool serialize(USB_setup_packet_array* const out_array)
 	{
-		if(!request_type.serialize(&(*out_array)[0]))
+		if(!request_type.serialize(&out_array[0]))
 		{
 			return false;
 		}
 
-		(*out_array)[1] = request;
+		in_array[1] = request;
 
-		(*out_array)[2] = Byte_util::get_b0(value);
-		(*out_array)[3] = Byte_util::get_b1(value);
+		in_array[2] = Byte_util::get_b0(value);
+		in_array[3] = Byte_util::get_b1(value);
 
-		(*out_array)[4] = Byte_util::get_b0(index);
-		(*out_array)[5] = Byte_util::get_b1(index);
+		in_array[4] = Byte_util::get_b0(index);
+		in_array[5] = Byte_util::get_b1(index);
 
-		(*out_array)[6] = Byte_util::get_b0(count);
-		(*out_array)[7] = Byte_util::get_b1(count);
+		in_array[6] = Byte_util::get_b0(count);
+		in_array[7] = Byte_util::get_b1(count);
 	}
-	bool deserialize(const Setup_packet_array& in_array)
+	bool deserialize(const USB_setup_packet_array& in_array)
 	{
 		if(!request_type.deserialize(in_array[0]))
 		{
@@ -129,22 +129,22 @@ public:
 
 			switch(recipient)
 			{
-				case RECIPIENT::DEVICE:
+				case DEVICE:
 				{
 					req_type_temp |= 0;
 					break;
 				}
-				case RECIPIENT::INTERFACE:
+				case INTERFACE:
 				{
 					req_type_temp |= 1;
 					break;
 				}
-				case RECIPIENT::ENDPOINT:
+				case ENDPOINT:
 				{
 					req_type_temp |= 2;
 					break;
 				}
-				case RECIPIENT::OTHER:
+				case OTHER:
 				{
 					req_type_temp |= 3;
 					break;

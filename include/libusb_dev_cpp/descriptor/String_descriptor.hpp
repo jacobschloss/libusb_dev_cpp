@@ -1,5 +1,9 @@
 #pragma once
 
+#include <array>
+
+#include <cstdint>
+
 template<size_t NUM_LANG>
 class String_descriptor_zero
 {
@@ -15,9 +19,9 @@ class String_descriptor_zero_enus : public String_descriptor_zero<1>
 {
 public:
 
-	String_descriptor_zero_enus() : wLANGID({0x0409})
+	String_descriptor_zero_enus()
 	{
-
+		wLANGID[0] = 0x0409;
 	}
 };
 
@@ -26,7 +30,7 @@ class String_descriptor_n
 {
 public:
 	//USB uses UTF-16-LE, so strings can only be this long
-	static_assert(STRLEN <= 126)
+	static_assert(STRLEN <= 126);
 
 	//build from ascii
 	String_descriptor_n(const char msg[STRLEN])

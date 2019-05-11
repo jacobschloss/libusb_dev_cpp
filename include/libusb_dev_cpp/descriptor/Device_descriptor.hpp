@@ -1,5 +1,9 @@
 #pragma once
 
+#include <array>
+
+#include <cstdint>
+
 class Device_descriptor
 {
 public:

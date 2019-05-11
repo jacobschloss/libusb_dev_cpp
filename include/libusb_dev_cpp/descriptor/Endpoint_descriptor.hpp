@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 class Endpoint_descriptor
 {
 public:
