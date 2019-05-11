@@ -1,11 +1,14 @@
 #pragma once
 
-class usb_device_base
+#include <cstdint>
+#include <cstddef>
+
+class usb_driver_base
 {
 public:
 
-	usb_device_base();
-	virtual ~usb_device_base();
+	usb_driver_base();
+	virtual ~usb_driver_base();
 
 	virtual bool initialize() = 0;
 	virtual bool connect() = 0;
