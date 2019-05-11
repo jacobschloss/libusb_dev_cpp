@@ -5,8 +5,8 @@ class Device_descriptor
 public:
 
 protected:
-	uint8_t bLength;
-	uint8_t bDescriptorType;
+	static constexpr uint8_t bLength = 18;
+	static constexpr uint8_t bDescriptorType = 0x01;
 	std::array<uint8_t, 2> bcdUSB;
 	uint8_t bDeviceClass;
 	uint8_t bDeviceSubClass;
