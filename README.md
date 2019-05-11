@@ -1,0 +1,1 @@
+A portable USB device library
