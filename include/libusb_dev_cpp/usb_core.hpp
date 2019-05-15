@@ -238,17 +238,17 @@ public:
 		enum class TYPE
 		{
 			STANDARD = 0,
-			CLASS = 1,
-			VENDOR = 2,
-			RESEVED = 3
+			CLASS    = 1,
+			VENDOR   = 2,
+			RESEVED  = 3
 		};
 
 		enum class RECIPIENT
 		{
-			DEVICE = 0,
+			DEVICE    = 0,
 			INTERFACE = 1,
-			ENDPOINT = 2,
-			OTHER = 3
+			ENDPOINT  = 2,
+			OTHER     = 3
 		};
 
 	protected:

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common_util/Byte_util.hpp"
+
 #include <array>
 
 #include <cstdint>
@@ -13,17 +15,23 @@ public:
 	bool serialize(Device_descriptor_array* const out_array);
 	bool deserialize(const Device_descriptor_array& array);
 
+	static constexpr uint16_t build_bcd(const uint8_t major, const uint8_t minor, const uint8_t subminor)
+	{
+		//0xJJMN
+		return Byte_util::make_u16(major, ((minor & 0x0F) << 4) | (subminor & 0x0F));
+	}
+
 protected:
 	static constexpr uint8_t bLength = 18;
 	static constexpr uint8_t bDescriptorType = 0x01;
-	std::array<uint8_t, 2> bcdUSB;
+	uint16_t bcdUSB;
 	uint8_t bDeviceClass;
 	uint8_t bDeviceSubClass;
 	uint8_t bDeviceProtocol;
 	uint8_t bMaxPacketSize;
 	uint16_t idVendor;
 	uint16_t idProduct;
-	std::array<uint8_t, 2> bcdDevice;
+	uint16_t bcdDevice;
 	uint8_t iManufacturer;
 	uint8_t iProduct;
 	uint8_t iSerialNumber;
