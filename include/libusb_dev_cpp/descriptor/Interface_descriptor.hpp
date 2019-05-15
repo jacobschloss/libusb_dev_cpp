@@ -1,10 +1,17 @@
 #pragma once
 
+#include <array>
+
 #include <cstdint>
 
 class Interface_descriptor
 {
 public:
+
+	typedef std::array<uint8_t, 9> Interface_descriptor_array;
+
+	bool serialize(Interface_descriptor_array* const out_array);
+	bool deserialize(const Interface_descriptor_array& array);
 
 protected:
 	static constexpr uint8_t bLength = 9;

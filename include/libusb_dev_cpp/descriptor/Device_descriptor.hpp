@@ -8,6 +8,11 @@ class Device_descriptor
 {
 public:
 
+	typedef std::array<uint8_t, 18> Device_descriptor_array;
+
+	bool serialize(Device_descriptor_array* const out_array);
+	bool deserialize(const Device_descriptor_array& array);
+
 protected:
 	static constexpr uint8_t bLength = 18;
 	static constexpr uint8_t bDescriptorType = 0x01;

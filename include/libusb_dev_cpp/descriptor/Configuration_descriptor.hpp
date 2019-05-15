@@ -1,10 +1,17 @@
 #pragma once
 
+#include <array>
+
 #include <cstdint>
 
 class Configuration_descriptor
 {
 public:
+
+	typedef std::array<uint8_t, 18> Configuration_descriptor_array;
+
+	bool serialize(Configuration_descriptor_array* const out_array);
+	bool deserialize(const Configuration_descriptor_array& array);
 
 protected:
 	static constexpr uint8_t bLength = 9;

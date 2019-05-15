@@ -21,24 +21,24 @@ public:
 		GET_DESCRIPTOR    = 0x06,
 		SET_DESCRIPTOR    = 0x07,
 		GET_CONFIGURATION = 0x08,
-		SET_CONFIGURATION = 0x09,
+		SET_CONFIGURATION = 0x09
 	};
 
 	enum class INTERFACE_REQUEST : uint8_t
 	{
 		GET_STATUS    = 0x00,
 		CLEAR_FEATURE = 0x01,
-		SET_FEATURE = 0x03,
+		SET_FEATURE   = 0x03,
 		GET_INTERFACE = 0x0A,
-		SET_INTERFACE = 0x11,
+		SET_INTERFACE = 0x11
 	};
 
 	enum class ENDPOINT_REQUEST : uint8_t
 	{
 		GET_STATUS    = 0x00,
 		CLEAR_FEATURE = 0x01,
-		SET_FEATURE = 0x03,
-		SYNC_FRAME = 0x0A,
+		SET_FEATURE   = 0x03,
+		SYNC_FRAME    = 0x0A
 	};
 
 	bool serialize(Setup_packet_array* const out_array)
