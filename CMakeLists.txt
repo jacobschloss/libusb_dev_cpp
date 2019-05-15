@@ -13,3 +13,18 @@ add_library(usb_dev_cpp
 target_include_directories(usb_dev_cpp PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+target_link_libraries(usb_dev_cpp
+	common_util
+)
+
+if(${BUILD_USB_DEV_CPP_TESTS})
+	add_library(usb_dev_cpp_tests
+		tests/descriptor/Endpoint_descriptor_tests.cpp
+	)
+
+	target_link_libraries(usb_dev_cpp_tests
+		usb_dev_cpp
+		googletest
+	)
+endif(${BUILD_USB_DEV_CPP_TESTS})
