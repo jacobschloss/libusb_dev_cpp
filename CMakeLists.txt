@@ -5,8 +5,12 @@ add_library(usb_dev_cpp
 	src/descriptor/Interface_descriptor.cpp
 	src/descriptor/String_descriptor.cpp
 
+	src/class/cdc/cdc.cpp
+	src/class/dfu/dfu.cpp
+
 	src/driver/usb_driver_base.cpp
 	src/driver/stm32/stm32_h7xx_otghs.cpp
+
 	src/usb_core.cpp
 )
 
