@@ -2,11 +2,48 @@
 
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
+#include <functional>
+
 class USB_core
 {
 public:
 
+	enum class USB_STATE
+	{
+		IDLE,
+		RXDATA,
+		TXDATA,
+		TX_ZLP,
+		LASTDATA,
+		STATUS_IN,
+		STATUS_OUT
+	};
 
+	enum class USB_CMD
+	{
+		ENABLE,
+		DISABLE,
+		CONNECT,
+		DISCONNECT,
+		RESET
+	};
+
+	enum class USB_RESP
+	{
+		FAIL,
+		ACK,
+		NAK
+	};
+
+	typedef std::function<void()> Event_callback;
+
+	typedef std::function<void()> Control_transfer_complete_callback;
+
+	typedef std::function<void()> Control_callback;
+
+	typedef std::function<void()> Get_descriptor_callback;
+
+	typedef std::function<void()> Set_configuration_callback;
 
 	bool initialize(usb_driver_base* driver, const uint8_t ep0size);
 	bool poll();
@@ -34,5 +71,7 @@ public:
 protected:
 
 	usb_driver_base* m_driver;
+
+
 
 };

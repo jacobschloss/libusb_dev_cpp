@@ -31,3 +31,8 @@ bool Setup_packet::deserialize(const Setup_packet_array& in_array)
 
 	return true;
 }
+
+bool Setup_packet::get_request_type(Request_type* const request_type)
+{
+	return request_type->deserialize(bmRequestType);
+}

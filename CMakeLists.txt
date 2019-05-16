@@ -15,6 +15,7 @@ add_library(usb_dev_cpp
 	src/usb_std.cpp
 
 	src/core/Setup_packet.cpp
+	src/core/Control_request.cpp
 	src/core/Request_type.cpp
 )
 

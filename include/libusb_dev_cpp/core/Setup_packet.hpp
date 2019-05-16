@@ -44,6 +44,8 @@ public:
 	bool serialize(Setup_packet_array* const out_array);
 	bool deserialize(const Setup_packet_array& in_array);
 
+	bool get_request_type(Request_type* const request_type);
+
 protected:
 	uint8_t bmRequestType;
 	uint8_t bRequest;
@@ -51,3 +53,4 @@ protected:
 	uint16_t wIndex;
 	uint16_t wLength;
 };
+
