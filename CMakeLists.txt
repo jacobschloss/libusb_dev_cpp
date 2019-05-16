@@ -12,6 +12,10 @@ add_library(usb_dev_cpp
 	src/driver/stm32/stm32_h7xx_otghs.cpp
 
 	src/usb_core.cpp
+	src/usb_std.cpp
+
+	src/core/Setup_packet.cpp
+	src/core/Request_type.cpp
 )
 
 target_include_directories(usb_dev_cpp PUBLIC

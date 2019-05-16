@@ -1,1 +1,5 @@
-A portable USB device library
+A portable USB device library.
+
+Features
+	CDC Class
+	DFU Class
