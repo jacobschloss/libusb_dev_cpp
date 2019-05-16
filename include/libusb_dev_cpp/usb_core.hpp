@@ -2,6 +2,9 @@
 
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
+#include "libusb_dev_cpp/core/Control_request.hpp"
+
+
 #include <functional>
 
 class USB_core
@@ -17,6 +20,18 @@ public:
 		LASTDATA,
 		STATUS_IN,
 		STATUS_OUT
+	};
+
+	enum class USB_EVENTS
+	{
+		RESET,
+		SOF,
+		SUSPEND,
+		WAKEUP,
+		EPRX,
+		EPTX,
+		EPSETUP,
+		ERROR
 	};
 
 	enum class USB_CMD
@@ -35,15 +50,15 @@ public:
 		NAK
 	};
 
-	typedef std::function<void()> Event_callback;
+	typedef std::function<void(USB_EVENTS event, uint8_t ep)> Event_callback;
 
-	typedef std::function<void()> Control_transfer_complete_callback;
+	typedef std::function<bool(Control_request* ctrl_req)> Control_transfer_complete_callback;
 
-	typedef std::function<void()> Control_callback;
+	typedef std::function<bool(Control_request* ctrl_req, Control_transfer_complete_callback* callback)> Control_callback;
 
-	typedef std::function<void()> Get_descriptor_callback;
+	typedef std::function<bool(Control_request* ctrl_req, uint8_t** address, size_t* size)> Get_descriptor_callback;
 
-	typedef std::function<void()> Set_configuration_callback;
+	typedef std::function<bool()> Set_configuration_callback;
 
 	bool initialize(usb_driver_base* driver, const uint8_t ep0size);
 	bool poll();
