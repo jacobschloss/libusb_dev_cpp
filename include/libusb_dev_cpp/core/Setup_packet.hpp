@@ -45,9 +45,9 @@ public:
 	bool deserialize(const Setup_packet_array& in_array);
 
 protected:
-	Request_type request_type;
-	uint8_t request;
-	uint16_t value;
-	uint16_t index;
-	uint16_t count;
+	uint8_t bmRequestType;
+	uint8_t bRequest;
+	uint16_t wValue;
+	uint16_t wIndex;
+	uint16_t wLength;
 };
