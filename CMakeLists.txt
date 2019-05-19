@@ -11,6 +11,8 @@ add_library(usb_dev_cpp
 	src/driver/usb_driver_base.cpp
 	src/driver/stm32/stm32_h7xx_otghs.cpp
 
+	src/driver/cpu/Cortex_m7.cpp
+
 	src/usb_core.cpp
 	src/usb_std.cpp
 
