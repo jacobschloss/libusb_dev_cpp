@@ -7,8 +7,8 @@ class usb_driver_base
 {
 public:
 
-	usb_driver_base();
-	virtual ~usb_driver_base();
+	usb_driver_base() = default;
+	virtual ~usb_driver_base() = default;
 
 	virtual bool initialize() = 0;
 
