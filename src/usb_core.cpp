@@ -56,29 +56,30 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 		}
 		case USB_common::USB_EVENTS::EPRX:
 		{
-			func = m_device->get_ep_rx_callback(ep);
+			func = m_driver->get_ep_rx_callback(ep);
 			break;
 		}
 		case USB_common::USB_EVENTS::EPTX:
 		{
-			func = m_device->get_ep_tx_callback(ep);
+			func = m_driver->get_ep_tx_callback(ep);
 			break;
 		}
 		case USB_common::USB_EVENTS::EPSETUP:
 		{
-			func = m_device->get_ep_setup_callback(ep);
+			func = m_driver->get_ep_setup_callback(ep);
 			break;
 		}
 		default:
 		{
-			func = m_device->get_event_callback(ep);
+			func = m_driver->get_event_callback(ep);
 			break;
 		}
 	}
 
 	if(func)
 	{
-		ret = func(evt, ep);
+		func(evt, ep);
+		ret = true;
 	}
 
 	return ret;
