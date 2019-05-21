@@ -2,7 +2,12 @@
 
 #include <functional>
 
-bool USB_core::initialize(usb_driver_base* driver, const uint8_t ep0size)
+USB_core::USB_core()
+{
+	m_driver = nullptr;
+}
+
+bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size)
 {
 	return false;
 }

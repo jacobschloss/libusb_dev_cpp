@@ -151,3 +151,29 @@ bool stm32_h7xx_otghs::set_usb_address(const uint8_t addr)
 {
 	OTGD->DCFG |= _VAL2FLD(USB_OTG_DCFG_DAD, addr);
 }
+
+size_t ep_write(const uint8_t ep, const uint8_t* buf, const uint16_t len)
+{
+	volatile uint32_t* fifo = EPFIFO(ep);
+
+	const size_t len32 = (blen + 3) / 4;
+
+	std::array<uint8_t, 4> temp_4u8;
+	for(size_t i = 0 i < len; i+=4)
+	{
+		//copy all 4 if avail, otherwise only the remainint
+		if((i+4) <= len)
+		{
+			temp_4u8[0] = buf[i + 0];
+			temp_4u8[1] = buf[i + 1];
+			temp_4u8[2] = buf[i + 2];
+			temp_4u8[3] = buf[i + 3];
+
+			*fifo = Byte_util::make_u32(b3, b2, b1, b0);
+		}
+	}
+}
+size_t ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t len)
+{
+
+}

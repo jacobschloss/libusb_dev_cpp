@@ -35,7 +35,14 @@ public:
 		NAK
 	};
 
-	bool initialize(usb_driver_base* driver, const uint8_t ep0size);
+	USB_core();
+	~USB_core() = default;
+
+	//no copy
+	USB_core(const USB_core& rhs) = delete;
+	USB_core& operator=(const USB_core& rhs) = delete;
+
+	bool initialize(usb_driver_base* const driver, const uint8_t ep0size);
 	bool poll();
 
 	bool enable();
