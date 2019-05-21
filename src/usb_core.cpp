@@ -45,6 +45,7 @@ bool USB_core::handle_reset()
 
 bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 {
+	USB_common::Event_callback func = nullptr;
 	bool ret = false;
 	switch(evt)
 	{
@@ -55,44 +56,29 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 		}
 		case USB_common::USB_EVENTS::EPRX:
 		{
-			const USB_common::Event_callback& func = m_device->get_ep_rx_callback(ep);
-			if(func)
-			{
-				func(evt, ep);
-			}
-
+			func = m_device->get_ep_rx_callback(ep);
 			break;
 		}
 		case USB_common::USB_EVENTS::EPTX:
 		{
-			const USB_common::Event_callback& func = m_device->get_ep_tx_callback(ep);
-			if(func)
-			{
-				func(evt, ep);
-			}
-
+			func = m_device->get_ep_tx_callback(ep);
 			break;
 		}
 		case USB_common::USB_EVENTS::EPSETUP:
 		{
-			const USB_common::Event_callback& func = m_device->get_ep_setup_callback(ep);
-			if(func)
-			{
-				func(evt, ep);
-			}
-
+			func = m_device->get_ep_setup_callback(ep);
 			break;
 		}
 		default:
 		{
-			const USB_common::Event_callback& func = m_device->get_event_callback(ep);
-			if(func)
-			{
-				func(evt, ep);
-			}
-
+			func = m_device->get_event_callback(ep);
 			break;
 		}
+	}
+
+	if(func)
+	{
+		ret = func(evt, ep);
 	}
 
 	return ret;
