@@ -4,6 +4,9 @@
 
 #include "STM32H7xx/Include/stm32h7xx.h"
 
+#include "common_util/Byte_util.hpp"
+#include "common_util/Register_util.hpp"
+
 namespace
 {
 	static constexpr size_t MAX_EP = 8;
@@ -44,7 +47,7 @@ bool stm32_h7xx_otghs::initialize()
 
 bool stm32_h7xx_otghs::enable()
 {
-	//reset usb if
+	//reset usb if it is on
 	if(RCC->AHB1ENR & (RCC_AHB1ENR_USB1OTGHSEN | RCC_AHB1ENR_USB1OTGHSULPIEN))
 	{
 		if(!disable())
@@ -53,11 +56,60 @@ bool stm32_h7xx_otghs::enable()
 		}
 	}
 
-	//enable usb core and ulpi clock for USB1
-	_BST(RCC->AHB1ENR, RCC_AHB1ENR_USB1OTGHSEN | RCC_AHB1ENR_USB1OTGHSULPIEN);
+	//enable usb core clock and ulpi clock for USB1
+	Register_util::set_bits(&RCC->AHB1ENR, RCC_AHB1ENR_USB1OTGHSEN | RCC_AHB1ENR_USB1OTGHSULPIEN);
 
 	//wait for USB1 to be idle
-	_WBS(OTG->GRSTCTL, USB_OTG_GRSTCTL_AHBIDL);
+	Register_util::wait_until_set(&OTG->GRSTCTL, USB_OTG_GRSTCTL_AHBIDL);
+
+	//soft reset
+	Register_util::set_bits(OTG->GRSTCTL, USB_OTG_GRSTCTL_CSRST);
+	Register_util::wait_until_clear(OTG->GRSTCTL, USB_OTG_GRSTCTL_CSRST);
+
+	//No PD, no internal transceiver
+	OTG->GCCFG = 0;
+
+	//???
+	Register_util::clear_bits(OTG->GUSBCFG, USB_OTG_GUSBCFG_TSDPS | USB_OTG_GUSBCFG_ULPIFSLS | USB_OTG_GUSBCFG_PHYSEL);
+
+	//???
+	OTG->GUSBCFG = USB_OTG_GUSBCFG_FDMOD                 | 
+	               //USB_OTG_GUSBCFG_ULPIIPD               |
+	               _VAL2FLD(USB_OTG_GUSBCFG_TRDT,  0x09) |
+	               _VAL2FLD(USB_OTG_GUSBCFG_TOCAL, 0x01) ;
+
+	//reset fifo assignments
+	for (size_t i = 0; i < 15; i++)
+	{
+		OTG->DIEPTXF[i] = 0;
+	}
+
+	//start clocks, no sleep gate
+	*OTGPCTL = 0;
+
+	//USB HS mode
+	_BMD(OTGD->DCFG, USB_OTG_DCFG_DSPD, _VAL2FLD(USB_OTG_DCFG_DSPD, 0x00));
+
+	//???
+    OTGD->DCFG |= USB_OTG_DCFG_NZLSOHSK;
+
+	//clear core interrupt
+	OTG->GINTMSK = 0U;
+	OTG->GINTSTS = 0xFFFFFFFF;
+
+	//config core interrupt
+	OTG->GINTMSK  = USB_OTG_GINTMSK_USBRST   |
+					USB_OTG_GINTMSK_ENUMDNEM |
+    				USB_OTG_GINTMSK_USBSUSPM |
+					USB_OTG_GINTMSK_ESUSPM   |
+    				//USB_OTG_GINTMSK_SOFM   |
+					USB_OTG_GINTMSK_WUIM     |
+					USB_OTG_GINTMSK_IEPINT   |
+					USB_OTG_GINTMSK_RXFLVLM  ;
+					;
+
+	//turn on global interrupt
+	Register_util::set_bits(OTG->GAHBCFG, USB_OTG_GAHBCFG_GINT);
 
 	return true;
 }
@@ -93,4 +145,9 @@ bool stm32_h7xx_otghs::disconnect()
 	Cortex_m7::data_instruction_sync();
 
 	return true;
+}
+
+bool stm32_h7xx_otghs::set_usb_address(const uint8_t addr)
+{
+	OTGD->DCFG |= _VAL2FLD(USB_OTG_DCFG_DAD, addr);
 }

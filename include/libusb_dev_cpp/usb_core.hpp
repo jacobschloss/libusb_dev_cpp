@@ -63,10 +63,11 @@ public:
 	bool initialize(usb_driver_base* driver, const uint8_t ep0size);
 	bool poll();
 
-	void enable();
-	void disable();
+	bool enable();
+	bool disable();
 
-	void connect();
+	bool connect();
+	bool disconnect();
 
 	void set_control_callback();
 	void set_config_callback();

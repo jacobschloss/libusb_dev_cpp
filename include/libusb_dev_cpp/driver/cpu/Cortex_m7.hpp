@@ -2,7 +2,7 @@
 
 #include "libusb_dev_cpp/driver/CPU_base.hpp"
 
-class Cortex_m7 : public CPU_base
+class Cortex_m7
 {
 public:
 	static inline void instruction_sync() override
