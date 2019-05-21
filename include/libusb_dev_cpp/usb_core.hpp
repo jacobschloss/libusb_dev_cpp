@@ -1,11 +1,8 @@
 #pragma once
 
+#include "libusb_dev_cpp/usb_common.hpp"
+
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
-
-#include "libusb_dev_cpp/core/Control_request.hpp"
-
-
-#include <functional>
 
 class USB_core
 {
@@ -20,18 +17,6 @@ public:
 		LASTDATA,
 		STATUS_IN,
 		STATUS_OUT
-	};
-
-	enum class USB_EVENTS
-	{
-		RESET,
-		SOF,
-		SUSPEND,
-		WAKEUP,
-		EPRX,
-		EPTX,
-		EPSETUP,
-		ERROR
 	};
 
 	enum class USB_CMD
@@ -49,16 +34,6 @@ public:
 		ACK,
 		NAK
 	};
-
-	typedef std::function<void(USB_EVENTS event, uint8_t ep)> Event_callback;
-
-	typedef std::function<bool(Control_request* ctrl_req)> Control_transfer_complete_callback;
-
-	typedef std::function<bool(Control_request* ctrl_req, Control_transfer_complete_callback* callback)> Control_callback;
-
-	typedef std::function<bool(Control_request* ctrl_req, uint8_t** address, size_t* size)> Get_descriptor_callback;
-
-	typedef std::function<bool()> Set_configuration_callback;
 
 	bool initialize(usb_driver_base* driver, const uint8_t ep0size);
 	bool poll();
@@ -86,8 +61,11 @@ public:
 
 protected:
 
+	bool handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep);
+
+	bool handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	bool handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	bool handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep);
+
 	usb_driver_base* m_driver;
-
-
-
 };

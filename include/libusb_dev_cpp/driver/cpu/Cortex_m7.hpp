@@ -1,11 +1,9 @@
 #pragma once
 
-#include "libusb_dev_cpp/driver/CPU_base.hpp"
-
 class Cortex_m7
 {
 public:
-	static inline void instruction_sync() override
+	static inline void instruction_sync()
 	{
 		asm volatile(
 			"isb SY\n"
@@ -14,7 +12,7 @@ public:
 			: "memory"
 		);
 	}
-	static inline void data_sync() override
+	static inline void data_sync()
 	{
 		asm volatile(
 			"dsb SY\n"
@@ -23,7 +21,7 @@ public:
 			: "memory"
 		);
 	}
-	static inline void data_instruction_sync() override
+	static inline void data_instruction_sync()
 	{
 		asm volatile(
 			"dsb SY\n"
