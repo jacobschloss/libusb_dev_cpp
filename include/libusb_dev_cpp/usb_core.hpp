@@ -51,9 +51,9 @@ public:
 	bool connect();
 	bool disconnect();
 
-	void set_control_callback();
-	void set_config_callback();
-	void set_descriptor_callback();
+	void set_control_callback(const USB_common::Control_callback& func);
+	void set_config_callback(const USB_common::Set_configuration_callback& func);
+	void set_descriptor_callback(const USB_common::Get_descriptor_callback& func);
 
 	void set_ep_callback();
 	void set_event_callback();

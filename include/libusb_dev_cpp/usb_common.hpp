@@ -28,4 +28,19 @@ public:
 	typedef std::function<bool(Control_request* ctrl_req, Control_transfer_complete_callback* callback)> Control_callback;
 	typedef std::function<bool(Control_request* ctrl_req, uint8_t** address, size_t* size)> Get_descriptor_callback;
 	typedef std::function<bool()> Set_configuration_callback;
+
+	static bool is_in_ep(const uint8_t ep)
+	{
+		return (ep & 0x80) != 0;
+	}
+
+	static bool is_out_ep(const uint8_t ep)
+	{
+		return (ep & 0x80) == 0;
+	}
+
+	static bool get_ep_addr(const uint8_t ep)
+	{
+		return ep & 0x7F;
+	}
 };

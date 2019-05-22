@@ -36,10 +36,9 @@ public:
 
 	virtual bool set_address(const uint8_t addr) = 0;
 
-	virtual size_t ep_setup(const uint8_t ep) = 0;
-
-	virtual size_t ep_config(const uint8_t ep) = 0;
-	virtual size_t ep_unconfig(const uint8_t ep) = 0;
+	virtual bool ep_setup(const uint8_t ep) = 0;
+	virtual bool ep_config(const uint8_t ep) = 0;
+	virtual void ep_unconfig(const uint8_t ep) = 0;
 
 	virtual bool ep_is_stalled(const uint8_t ep) = 0;
 	virtual void ep_stall(const uint8_t ep) = 0;
@@ -85,7 +84,10 @@ public:
 		return m_ep_setup_callbacks[ep];
 	}
 
+	virtual void poll(const USB_common::Event_callback& func) = 0;
+	
 protected:
+
 
 	USB_common::Control_callback                   m_control_callback;
 	USB_common::Control_transfer_complete_callback m_control_transfer_complete_callback;

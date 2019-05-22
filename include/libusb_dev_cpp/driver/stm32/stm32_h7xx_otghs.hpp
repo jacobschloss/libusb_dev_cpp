@@ -19,12 +19,11 @@ public:
 	bool connect() override;
 	bool disconnect() override;
 
-	bool set_usb_address(const uint8_t addr) override;
+	bool set_address(const uint8_t addr) override;
 
-	size_t ep_setup(const uint8_t ep) override;
-
-	size_t ep_config(const uint8_t ep) override;
-	size_t ep_unconfig(const uint8_t ep) override;
+	bool ep_setup(const uint8_t ep) override;
+	bool ep_config(const uint8_t ep) override;
+	void ep_unconfig(const uint8_t ep) override;
 
 	bool ep_is_stalled(const uint8_t ep) override;
 	void ep_stall(const uint8_t ep) override;
@@ -36,5 +35,16 @@ public:
 	uint16_t get_frame_number() override;
 	size_t get_serial_number(uint8_t* const buf, const size_t maxlen) override;
 
+	void poll(const USB_common::Event_callback& func) override;
+
 protected:
+
+	
+	void flush_rx();
+	void flush_tx(const uint8_t ep);
+
+	static constexpr size_t NUM_EP = 8;
+	static constexpr size_t MAX_RX_PACKET = 512;
+	static constexpr size_t RX_FIFO_SIZE = (10 + (2*MAX_RX_PACKET/4) + 2 + 2);
+	static constexpr size_t MAX_FIFO_SZ_U32 = 1024;
 };

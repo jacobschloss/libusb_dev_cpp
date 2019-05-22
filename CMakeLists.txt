@@ -27,6 +27,8 @@ target_include_directories(usb_dev_cpp PUBLIC
 
 target_link_libraries(usb_dev_cpp
 	common_util
+	freertos_cpp_util
+	stm32h7xx_cmsis
 )
 
 if(${BUILD_USB_DEV_CPP_TESTS})

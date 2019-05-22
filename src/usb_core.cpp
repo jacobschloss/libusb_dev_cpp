@@ -9,12 +9,15 @@ USB_core::USB_core()
 
 bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size)
 {
-	return false;
+	m_driver = driver;
+
+	return true;
 }
 
 bool USB_core::poll()
 {
-	return false;
+	m_driver->poll(std::bind(&USB_core::handle_event, this, std::placeholders::_1, std::placeholders::_2));
+	return true;
 }
 
 bool USB_core::enable()
@@ -35,6 +38,19 @@ bool USB_core::disconnect()
 	return m_driver->disconnect();
 }
 
+void USB_core::set_control_callback(const USB_common::Control_callback& func)
+{
+
+}
+void USB_core::set_config_callback(const USB_common::Set_configuration_callback& func)
+{
+
+}
+void USB_core::set_descriptor_callback(const USB_common::Get_descriptor_callback& func)
+{
+
+}
+
 bool USB_core::handle_reset()
 {
 	m_driver->ep_config(0);
@@ -46,6 +62,8 @@ bool USB_core::handle_reset()
 	m_driver->set_ep_setup_callback(0x00, std::bind(&USB_core::handle_ep0_setup, this, std::placeholders::_1, std::placeholders::_2));
 
 	m_driver->set_address(0);	
+
+	return true;
 }
 
 bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
@@ -92,15 +110,15 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 
 bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
-	
+	return false;
 }
 
 bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
-
+	return false;
 }
 
 bool USB_core::handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
-
+	return false;
 }
