@@ -8,17 +8,6 @@ class USB_core
 {
 public:
 
-	enum class USB_STATE
-	{
-		IDLE,
-		RXDATA,
-		TXDATA,
-		TX_ZLP,
-		LASTDATA,
-		STATUS_IN,
-		STATUS_OUT
-	};
-
 	enum class USB_CMD
 	{
 		ENABLE,
@@ -75,6 +64,9 @@ protected:
 	bool handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
 	bool handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 	bool handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep);
+
+	void process_eprx(const uint8_t ep);
+	void process_eptx(const uint8_t ep);
 
 	usb_driver_base* m_driver;
 };

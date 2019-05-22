@@ -29,7 +29,7 @@ bool usb_driver_base::set_ep_tx_callback(const uint8_t ep, const USB_common::Eve
 
 bool usb_driver_base::set_ep_setup_callback(const uint8_t ep, const USB_common::Event_callback& func)
 {
-	m_ep_rx_callbacks[ep] = func;
+	m_ep_setup_callbacks[ep] = func;
 
 	return true;
 }

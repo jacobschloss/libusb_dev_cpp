@@ -17,19 +17,19 @@ namespace
 
 	static volatile USB_OTG_GlobalTypeDef* const OTG  = reinterpret_cast<volatile USB_OTG_GlobalTypeDef*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_GLOBAL_BASE);
 	static volatile USB_OTG_DeviceTypeDef* const OTGD = reinterpret_cast<volatile USB_OTG_DeviceTypeDef*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_DEVICE_BASE);
-	static volatile uint32_t* const OTGPCTL          = reinterpret_cast<volatile uint32_t*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_PCGCCTL_BASE);
+	static volatile uint32_t* const OTGPCTL           = reinterpret_cast<volatile uint32_t*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_PCGCCTL_BASE);
 
 	static inline volatile uint32_t* EPFIFO(const uint8_t ep)
 	{
-		return (volatile uint32_t*)(USB1_OTG_HS_PERIPH_BASE + USB_OTG_FIFO_BASE + (ep * USB_OTG_FIFO_SIZE));
+		return reinterpret_cast<volatile uint32_t*>(USB1_OTG_HS_PERIPH_BASE + USB_OTG_FIFO_BASE + (ep * USB_OTG_FIFO_SIZE));
 	}
 	static inline volatile USB_OTG_INEndpointTypeDef* EPIN(const uint8_t ep)
 	{
-		return (volatile USB_OTG_INEndpointTypeDef*)(USB1_OTG_HS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + (ep * USB_OTG_EP_REG_SIZE));
+		return reinterpret_cast<volatile USB_OTG_INEndpointTypeDef*>(USB1_OTG_HS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + (ep * USB_OTG_EP_REG_SIZE));
 	}
 	static inline volatile USB_OTG_OUTEndpointTypeDef* EPOUT(const uint8_t ep)
 	{
-		return (volatile USB_OTG_OUTEndpointTypeDef*)(USB1_OTG_HS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + (ep * USB_OTG_EP_REG_SIZE));
+		return reinterpret_cast<volatile USB_OTG_OUTEndpointTypeDef*>(USB1_OTG_HS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + (ep * USB_OTG_EP_REG_SIZE));
 	}	
 }
 
@@ -313,9 +313,66 @@ size_t stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const ui
 
 	return 0;
 }
-size_t stm32_h7xx_otghs::ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t len)
+size_t stm32_h7xx_otghs::ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t max_len)
 {
-	return 0;
+	//no data
+	if(!(OTG->GINTSTS & USB_OTG_GINTSTS_RXFLVL))
+	{
+		return 0;
+	}
+
+	//no data for that ep
+	if((OTG->GRXSTSR & USB_OTG_GRXSTSP_EPNUM) != ep)
+	{
+		return 0;
+	}
+
+	const uint32_t GRXSTSP = OTG->GRXSTSP;
+	const size_t blen = std::min<uint32_t>(_FLD2VAL(USB_OTG_GRXSTSP_BCNT, GRXSTSP), max_len);
+
+	for(size_t i = 0; i < blen; i += 4)
+	{
+		const uint32_t temp = *EPFIFO(0);
+
+		const size_t bleft = max_len - i;
+		if(bleft >= 4)
+		{
+			buf[i+0] = Byte_util::get_b0(temp);
+			buf[i+1] = Byte_util::get_b1(temp);
+			buf[i+2] = Byte_util::get_b2(temp);
+			buf[i+3] = Byte_util::get_b3(temp);
+		}
+		else
+		{
+			switch(bleft)
+			{
+				case 1:
+				{
+					buf[i+0] = Byte_util::get_b0(temp);
+					break;
+				}
+				case 2:
+				{
+					buf[i+0] = Byte_util::get_b0(temp);
+					buf[i+1] = Byte_util::get_b1(temp);
+					break;
+				}
+				case 3:
+				{
+					buf[i+0] = Byte_util::get_b0(temp);
+					buf[i+1] = Byte_util::get_b1(temp);
+					buf[i+2] = Byte_util::get_b2(temp);
+					break;
+				}
+				default:
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	return blen;
 }
 
 uint16_t stm32_h7xx_otghs::get_frame_number()
@@ -354,32 +411,102 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 		}
 		else if(GINTSTS & USB_OTG_GINTSTS_ENUMDNE)
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_ENUMDNE");
+
 			OTG->GINTSTS = USB_OTG_GINTSTS_ENUMDNE;
 
 			event = USB_common::USB_EVENTS::RESET;
 		}
 		else if(GINTSTS & USB_OTG_GINTSTS_IEPINT)
 		{
-
+			uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_IEPINT");
 		}
 		else if(GINTSTS & USB_OTG_GINTSTS_RXFLVL)
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL");
+
+			const uint32_t GRXSTSR = OTG->GRXSTSR;
+
+			ep = _FLD2VAL(USB_OTG_GRXSTSP_EPNUM, GRXSTSR);
+			switch(_FLD2VAL(USB_OTG_GRXSTSP_PKTSTS, GRXSTSR))
+			{
+				case 0x01:
+				{
+					//GLOBAL OUT NAK, int
+					break;
+				}
+				case 0x02:
+				{
+					//OUT packet received
+					event = USB_common::USB_EVENTS::EPRX;
+					break;
+				}
+				case 0x03:
+				{
+					//OUT transfer completed, int
+					Register_util::set_bits(&(EPOUT(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
+					break;
+				}
+				case 0x04:
+				{
+					uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS 0x04");
+
+					//SETUP transaction completed, int
+					Register_util::set_bits(&(EPOUT(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
+					break;
+				}
+				case 0x06:
+				{
+					uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS 0x06");
+
+					//SETUP data packet received
+					if(EPIN(ep)->DIEPTSIZ & USB_OTG_DIEPTSIZ_PKTCNT)
+					{
+						flush_tx(ep);
+					}
+
+					event = USB_common::USB_EVENTS::EPSETUP;
+					break;
+				}
+				default:
+				{
+					//???
+					//force a pop
+					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
+					break;
+				}
+			}
 
 		}
 		else if(GINTSTS & USB_OTG_GINTSTS_SOF)
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_USBSUSP");
+
 			OTG->GINTSTS = USB_OTG_GINTSTS_SOF;
 
 			event = USB_common::USB_EVENTS::SOF;
 		}
 		else if(GINTSTS & USB_OTG_GINTSTS_USBSUSP)
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_USBSUSP");
+
 			OTG->GINTSTS = USB_OTG_GINTSTS_USBSUSP;
 
 			event = USB_common::USB_EVENTS::SUSPEND;
 		}
+        else if(GINTSTS & USB_OTG_GINTSTS_ESUSP)
+        {
+        	uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_ESUSP");
+
+            OTG->GINTSTS = USB_OTG_GINTSTS_ESUSP;
+            continue;
+        }
 		else if(GINTSTS & USB_OTG_GINTSTS_WKUINT)
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_WKUINT");
+
 			OTG->GINTSTS = USB_OTG_GINTSTS_WKUINT;
 
 			event = USB_common::USB_EVENTS::WAKEUP;

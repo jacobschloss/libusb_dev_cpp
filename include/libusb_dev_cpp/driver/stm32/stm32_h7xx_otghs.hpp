@@ -30,7 +30,7 @@ public:
 	void ep_unstall(const uint8_t ep) override;
 
 	size_t ep_write(const uint8_t ep, const uint8_t* buf, const uint16_t len) override;
-	size_t ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t len) override;
+	size_t ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t max_len) override;
 
 	uint16_t get_frame_number() override;
 	size_t get_serial_number(uint8_t* const buf, const size_t maxlen) override;
