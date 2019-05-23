@@ -1,3 +1,10 @@
+/**
+ * @brief Device_descriptor
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #pragma once
 
 #include "common_util/Byte_util.hpp"
@@ -21,7 +28,6 @@ public:
 		return Byte_util::make_u16(major, ((minor & 0x0F) << 4) | (subminor & 0x0F));
 	}
 
-protected:
 	static constexpr uint8_t bLength = 18;
 	static constexpr uint8_t bDescriptorType = 0x01;
 	uint16_t bcdUSB;
@@ -36,4 +42,5 @@ protected:
 	uint8_t iProduct;
 	uint8_t iSerialNumber;
 	uint8_t bNumConfigurations;
+protected:
 };

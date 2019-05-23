@@ -6,6 +6,8 @@ add_library(usb_dev_cpp
 	src/descriptor/String_descriptor.cpp
 
 	src/class/cdc/cdc.cpp
+	src/class/cdc/cdc_usb.cpp
+
 	src/class/dfu/dfu.cpp
 
 	src/driver/usb_driver_base.cpp
@@ -19,6 +21,7 @@ add_library(usb_dev_cpp
 	src/core/Setup_packet.cpp
 	src/core/Control_request.cpp
 	src/core/Request_type.cpp
+	src/core/Get_descriptor.cpp
 )
 
 target_include_directories(usb_dev_cpp PUBLIC

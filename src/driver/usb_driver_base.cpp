@@ -1,12 +1,14 @@
+/**
+ * @brief usb_driver_base
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
 usb_driver_base::usb_driver_base()
 {
-	m_control_callback = nullptr;
-	m_control_transfer_complete_callback = nullptr;
-	m_set_configuration_callback = nullptr;
-	m_get_descriptor_callback = nullptr;
-
 	m_event_callbacks.fill(nullptr);
 	m_ep_rx_callbacks.fill(nullptr);
 	m_ep_tx_callbacks.fill(nullptr);

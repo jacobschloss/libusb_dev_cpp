@@ -1,3 +1,10 @@
+/**
+ * @brief Request_type
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #pragma once
 
 #include <array>
@@ -33,7 +40,6 @@ public:
 		OTHER     = 3
 	};
 
-protected:
 	DATA_DIR data_dir;
 	TYPE type;
 	RECIPIENT recipient;

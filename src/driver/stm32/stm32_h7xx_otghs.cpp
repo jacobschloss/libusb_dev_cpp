@@ -1,3 +1,10 @@
+/**
+ * @brief stm32_h7xx_otghs
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #include "libusb_dev_cpp/driver/stm32/stm32_h7xx_otghs.hpp"
 
 #include "libusb_dev_cpp/driver/cpu/Cortex_m7.hpp"
@@ -446,7 +453,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					//OUT transfer completed, int
 					Register_util::set_bits(&(EPOUT(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-					break;
+					continue;
 				}
 				case 0x04:
 				{
@@ -455,7 +462,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					//SETUP transaction completed, int
 					Register_util::set_bits(&(EPOUT(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-					break;
+					continue;
 				}
 				case 0x06:
 				{
@@ -475,7 +482,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					//???
 					//force a pop
 					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-					break;
+					continue;
 				}
 			}
 

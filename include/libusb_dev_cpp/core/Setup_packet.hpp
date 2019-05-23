@@ -1,3 +1,10 @@
+/**
+ * @brief Setup_packet
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #pragma once
 
 #include "libusb_dev_cpp/core/Request_type.hpp"
@@ -44,7 +51,7 @@ public:
 	bool serialize(Setup_packet_array* const out_array);
 	bool deserialize(const Setup_packet_array& in_array);
 
-	bool get_request_type(Request_type* const request_type);
+	bool get_request_type(Request_type* const request_type) const;
 
 	uint8_t bmRequestType;
 	uint8_t bRequest;

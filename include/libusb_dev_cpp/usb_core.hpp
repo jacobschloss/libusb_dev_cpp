@@ -17,15 +17,8 @@ public:
 		RESET
 	};
 
-	enum class USB_RESP
-	{
-		FAIL,
-		ACK,
-		NAK
-	};
-
 	USB_core();
-	~USB_core() = default;
+	virtual ~USB_core();
 
 	//no copy
 	USB_core(const USB_core& rhs) = delete;
@@ -39,13 +32,6 @@ public:
 
 	bool connect();
 	bool disconnect();
-
-	void set_control_callback(const USB_common::Control_callback& func);
-	void set_config_callback(const USB_common::Set_configuration_callback& func);
-	void set_descriptor_callback(const USB_common::Get_descriptor_callback& func);
-
-	void set_ep_callback();
-	void set_event_callback();
 
 	void config_ep();
 	void deconfig_ep();
@@ -65,8 +51,45 @@ protected:
 	bool handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 	bool handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep);
 
-	void process_eprx(const uint8_t ep);
-	void process_eptx(const uint8_t ep);
+	void handle_ep_rx(const uint8_t ep);
+	void handle_ep_tx(const uint8_t ep);
+
+	virtual USB_common::USB_RESP process_request(Control_request* const req);
+
+	virtual USB_common::USB_RESP handle_device_request(Control_request* const req);
+	virtual USB_common::USB_RESP handle_iface_request(Control_request* const req);
+	virtual USB_common::USB_RESP handle_ep_request(Control_request* const req);
+
+	virtual void handle_ctrl_req_complete();
+
+	class usb_driver_buffer
+	{
+	public:
+		usb_driver_buffer()
+		{
+			data_buf     = nullptr;
+			data_ptr     = nullptr;
+			data_count   = 0;
+			data_maxsize = 0;
+		}
+
+		//start of buffer
+		uint8_t* data_buf;
+
+		//current position in buffer
+		uint8_t* data_ptr;
+
+		//requested length
+		size_t   data_count;
+
+		//max length
+		size_t   data_maxsize;
+	};
 
 	usb_driver_base* m_driver;
+
+	usb_driver_buffer m_rx_buffer;
+
+	Control_request m_ctrl_req;
+	std::array<uint8_t, 64> m_ctrl_req_data;
 };

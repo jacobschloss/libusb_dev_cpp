@@ -1,3 +1,10 @@
+/**
+ * @brief Setup_packet
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #include "libusb_dev_cpp/core/Setup_packet.hpp"
 
 #include "common_util/Byte_util.hpp"
@@ -32,7 +39,7 @@ bool Setup_packet::deserialize(const Setup_packet_array& in_array)
 	return true;
 }
 
-bool Setup_packet::get_request_type(Request_type* const request_type)
+bool Setup_packet::get_request_type(Request_type* const request_type) const
 {
 	return request_type->deserialize(bmRequestType);
 }

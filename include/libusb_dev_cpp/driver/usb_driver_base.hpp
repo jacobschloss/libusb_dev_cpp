@@ -1,3 +1,10 @@
+/**
+ * @brief usb_driver_base
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #pragma once
 
 #include "libusb_dev_cpp/usb_common.hpp"
@@ -22,10 +29,6 @@ public:
 
 	struct usb_driver_status
 	{
-		uint8_t* data_buf;
-		uint8_t* data_ptr;
-		size_t   data_count;
-		size_t   data_maxsize;
 		size_t   ep0_size;
 		uint8_t  active_device_cfg;
 		// uint8_t  device_state;
@@ -98,12 +101,6 @@ public:
 	virtual void poll(const USB_common::Event_callback& func) = 0;
 
 protected:
-
-
-	USB_common::Control_callback                   m_control_callback;
-	USB_common::Control_transfer_complete_callback m_control_transfer_complete_callback;
-	USB_common::Set_configuration_callback         m_set_configuration_callback;
-	USB_common::Get_descriptor_callback            m_get_descriptor_callback;
 
 	std::array<USB_common::Event_callback, USB_common::USB_EVENTS_MAX> m_event_callbacks;
 	std::array<USB_common::Event_callback, 8>                          m_ep_rx_callbacks;

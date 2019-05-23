@@ -1,3 +1,10 @@
+/**
+ * @brief Interface_descriptor
+ * @author Jacob Schloss <jacob@schloss.io>
+ * @copyright Copyright (c) 2019 Jacob Schloss. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #include "libusb_dev_cpp/descriptor/Interface_descriptor.hpp"
 
 bool Interface_descriptor::serialize(Interface_descriptor_array* const out_array)
