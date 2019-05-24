@@ -18,7 +18,7 @@ bool Device_descriptor::serialize(Device_descriptor_array* const out_array)
 	(*out_array)[4]  = bDeviceClass;
 	(*out_array)[5]  = bDeviceSubClass;
 	(*out_array)[6]  = bDeviceProtocol;
-	(*out_array)[7]  = bMaxPacketSize;
+	(*out_array)[7]  = bMaxPacketSize0;
 	(*out_array)[8]  = Byte_util::get_b0(idVendor);
 	(*out_array)[9]  = Byte_util::get_b1(idVendor);
 	(*out_array)[10] = Byte_util::get_b0(idProduct);
@@ -47,7 +47,7 @@ bool Device_descriptor::deserialize(const Device_descriptor_array& array)
 	bDeviceClass       = array[4];
 	bDeviceSubClass    = array[5];
 	bDeviceProtocol    = array[6];
-	bMaxPacketSize     = array[7];
+	bMaxPacketSize0     = array[7];
 	idVendor           = Byte_util::make_u16(array[9], array[8]);
 	idProduct          = Byte_util::make_u16(array[11], array[10]);
 	bcdDevice          = Byte_util::make_u16(array[13], array[12]);

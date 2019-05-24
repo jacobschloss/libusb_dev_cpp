@@ -15,12 +15,30 @@ CDC_usb::~CDC_usb()
 bool CDC_usb::fill_descriptors()
 {
 	Device_descriptor dev_desc;
+	dev_desc.bcdUSB = Device_descriptor::build_bcd(2, 0, 0);
+	dev_desc.bDeviceClass    = 0;
+	dev_desc.bDeviceSubClass = 0;
+	dev_desc.bDeviceProtocol = 0;
+	dev_desc.bMaxPacketSize0 = 8;
+	dev_desc.idVendor  = 0x0123;
+	dev_desc.idProduct = 0x4567;
+	dev_desc.bcdDevice = Device_descriptor::build_bcd(1, 0, 0);
+	dev_desc.iManufacturer      = 0;
+	dev_desc.iProduct           = 0;
+	dev_desc.iSerialNumber      = 0;
+	dev_desc.bNumConfigurations = 1;
 	if(!dev_desc.serialize(&dev_desc_array))
 	{
 		return false;
 	}
 
 	Configuration_descriptor conf_desc;
+	conf_desc.wTotalLength        = Configuration_descriptor::bLength;
+	conf_desc.bNumInterfaces      = 2;
+	conf_desc.bConfigurationValue = 1;
+	conf_desc.iConfiguration      = 0;
+	conf_desc.bmAttributes        = 0;
+	conf_desc.bMaxPower           = Configuration_descriptor::ma_to_maxpower(150);
 	if(!conf_desc.serialize(&conf_desc_array))
 	{
 		return false;

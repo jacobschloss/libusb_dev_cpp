@@ -15,12 +15,22 @@ class Configuration_descriptor
 {
 public:
 
+	enum class Attributes
+	{
+		SELF_POWERED  = 0xC0,
+		REMOTE_WAKEUP = 0xA0
+	};
+
 	typedef std::array<uint8_t, 18> Configuration_descriptor_array;
 
 	bool serialize(Configuration_descriptor_array* const out_array);
 	bool deserialize(const Configuration_descriptor_array& array);
 
-protected:
+	static uint8_t ma_to_maxpower(const uint8_t ma)
+	{
+		return (ma + 1) / 2;
+	}
+
 	static constexpr uint8_t bLength = 9;
 	static constexpr uint8_t bDescriptorType = 0x02;
 	uint16_t wTotalLength;
