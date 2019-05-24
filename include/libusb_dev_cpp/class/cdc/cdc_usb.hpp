@@ -21,13 +21,19 @@ public:
 	CDC_usb();
 	~CDC_usb() override;
 
+	bool fill_descriptors();
+
 	USB_common::USB_RESP handle_device_request(Control_request* const req) override;
 	USB_common::USB_RESP handle_iface_request(Control_request* const req) override;
 	USB_common::USB_RESP handle_ep_request(Control_request* const req) override;
 
+	bool set_configuration(const uint8_t bConfigurationValue) override;
+	bool get_configuration(uint8_t* const bConfigurationValue) override;
+
 protected:
-	Configuration_descriptor::Configuration_descriptor_array conf_desc_array;
+
 	Device_descriptor::Device_descriptor_array dev_desc_array;
+	Configuration_descriptor::Configuration_descriptor_array conf_desc_array;
 	Interface_descriptor::Interface_descriptor_array iface_desc_array;
 
 	Endpoint_descriptor::Endpoint_descriptor_array ep_in_desc_array;

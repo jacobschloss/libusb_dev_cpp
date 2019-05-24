@@ -28,9 +28,8 @@ public:
 
 	bool set_address(const uint8_t addr) override;
 
-	bool ep_setup(const uint8_t ep) override;
-	bool ep_config(const uint8_t ep) override;
-	void ep_unconfig(const uint8_t ep) override;
+	bool ep_config(const ep_cfg& ep) override;
+	bool ep_unconfig(const uint8_t ep) override;
 
 	bool ep_is_stalled(const uint8_t ep) override;
 	void ep_stall(const uint8_t ep) override;
@@ -49,9 +48,13 @@ protected:
 	
 	void flush_rx();
 	void flush_tx(const uint8_t ep);
+	void flush_all_tx();
 
-	static constexpr size_t NUM_EP = 8;
+	static bool config_ep_tx_fifo(const uint8_t ep, const size_t len);
+
+	static constexpr size_t MAX_NUM_EP = 5;//ep0 + ep1..ep5
 	static constexpr size_t MAX_RX_PACKET = 512;
 	static constexpr size_t RX_FIFO_SIZE = (10 + (2*MAX_RX_PACKET/4) + 2 + 2);
-	static constexpr size_t MAX_FIFO_SZ_U32 = 1024;
+	static constexpr size_t MAX_FIFO_LEN_U32 = 1024; //uint32 * 1024, 4096B
+	static constexpr size_t MAX_FIFO_LEN_U8  = 4096; //uint8  * 4096, 4096B
 };

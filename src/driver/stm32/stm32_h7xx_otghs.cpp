@@ -18,26 +18,102 @@
 
 namespace
 {
-	static constexpr size_t MAX_EP = 8;
-	static constexpr size_t MAX_RX_PACKET = 512;
-	static constexpr size_t MAX_FIFO_SZ = 1024; //uint32 * 1024
-
 	static volatile USB_OTG_GlobalTypeDef* const OTG  = reinterpret_cast<volatile USB_OTG_GlobalTypeDef*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_GLOBAL_BASE);
 	static volatile USB_OTG_DeviceTypeDef* const OTGD = reinterpret_cast<volatile USB_OTG_DeviceTypeDef*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_DEVICE_BASE);
 	static volatile uint32_t* const OTGPCTL           = reinterpret_cast<volatile uint32_t*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_PCGCCTL_BASE);
 
-	static inline volatile uint32_t* EPFIFO(const uint8_t ep)
+	static inline volatile uint32_t* get_ep_fifo(const uint8_t ep)
 	{
 		return reinterpret_cast<volatile uint32_t*>(USB1_OTG_HS_PERIPH_BASE + USB_OTG_FIFO_BASE + (ep * USB_OTG_FIFO_SIZE));
 	}
-	static inline volatile USB_OTG_INEndpointTypeDef* EPIN(const uint8_t ep)
+	static inline volatile USB_OTG_INEndpointTypeDef* get_ep_in(const uint8_t ep)
 	{
 		return reinterpret_cast<volatile USB_OTG_INEndpointTypeDef*>(USB1_OTG_HS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + (ep * USB_OTG_EP_REG_SIZE));
 	}
-	static inline volatile USB_OTG_OUTEndpointTypeDef* EPOUT(const uint8_t ep)
+	static inline volatile USB_OTG_OUTEndpointTypeDef* get_ep_out(const uint8_t ep)
 	{
 		return reinterpret_cast<volatile USB_OTG_OUTEndpointTypeDef*>(USB1_OTG_HS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + (ep * USB_OTG_EP_REG_SIZE));
-	}	
+	}
+}
+
+//you must configure the ep tx fifo in order, one after another
+//eg 0, 1, 2, 3
+bool stm32_h7xx_otghs::config_ep_tx_fifo(const uint8_t ep, const size_t len)
+{
+	if(ep != 0)
+	{
+		if(ep > MAX_NUM_EP)
+		{
+			return false;
+		}
+
+		if((len < 64) || (len > 2048))
+		{
+			return false;
+		}
+
+		const uint32_t DIEPTXF0_HNPTXFSIZ = OTG->DIEPTXF0_HNPTXFSIZ;
+		const uint32_t ep0_fsa = _FLD2VAL(USB_OTG_TX0FSA, DIEPTXF0_HNPTXFSIZ);
+		const uint32_t ep0_fd  = _FLD2VAL(USB_OTG_TX0FD , DIEPTXF0_HNPTXFSIZ);
+		
+		uint32_t fsa = ep0_fsa + ep0_fd;
+
+		for(size_t i = 1; i <= ep; i++)
+		{
+			if(i == ep)
+			{
+				//length in 32bit
+				const size_t len32 = (len+3U) / 4U;
+
+				//fsa must be 32bit aligned
+				if((fsa % 4) != 0)
+				{
+					fsa += 4 - (fsa % 4);
+				}
+
+				if((fsa + len32*4U) > MAX_FIFO_LEN_U8)
+				{
+					return false;
+				}
+
+				OTG->DIEPTXF[i-1] = _VAL2FLD(USB_OTG_DIEPTXF_INEPTXFD, len32) | _VAL2FLD(USB_OTG_DIEPTXF_INEPTXSA, fsa);
+			}
+			else
+			{
+				const uint32_t DIEPTXF = OTG->DIEPTXF[i-1];
+				const uint32_t i_fsa = _FLD2VAL(USB_OTG_DIEPTXF_INEPTXSA, DIEPTXF);
+				const uint32_t i_fd  = _FLD2VAL(USB_OTG_DIEPTXF_INEPTXFD, DIEPTXF);		
+
+				fsa = i_fd + i_fsa;
+			}
+		}
+	}
+	else
+	{
+		if((len < 64) || (len > 1024))
+		{
+			return false;
+		}
+
+		//length in 32bit
+		const size_t len32 = (len+3U) / 4U;
+		uint32_t fsa = RX_FIFO_SIZE;
+
+		//fsa might need to be 32bit aligned
+		if((fsa % 4) != 0)
+		{
+			fsa += 4 - (fsa % 4);
+		}
+
+		if((fsa + len32*4U) > MAX_FIFO_LEN_U8)
+		{
+			return false;
+		}
+
+		OTG->DIEPTXF0_HNPTXFSIZ = _VAL2FLD(USB_OTG_TX0FD, len32) | _VAL2FLD(USB_OTG_TX0FSA, fsa);
+	}
+
+	return true;
 }
 
 stm32_h7xx_otghs::stm32_h7xx_otghs()
@@ -121,8 +197,12 @@ bool stm32_h7xx_otghs::enable()
 
 	//rx fifo
 	OTG->GRXFSIZ = RX_FIFO_SIZE;
-	//ep0 tx fifo
-	OTG->DIEPTXF0_HNPTXFSIZ = RX_FIFO_SIZE | (0x10 << 16);
+	//ep0 tx fifo, TX0FD | TX0FSA
+	if(!config_ep_tx_fifo(0, 64))
+	{
+		return false;
+	}
+	// OTG->DIEPTXF0_HNPTXFSIZ = Byte_util::make_u32(0x0010, RX_FIFO_SIZE);
 
 	//tx ep int
 	OTGD->DIEPMSK = USB_OTG_DIEPMSK_XFRCM;
@@ -193,17 +273,62 @@ bool stm32_h7xx_otghs::set_address(const uint8_t addr)
 	return true;
 }
 
-bool stm32_h7xx_otghs::ep_setup(const uint8_t ep)
+bool stm32_h7xx_otghs::ep_config(const ep_cfg& ep)
 {
-	return 0;
+	const uint8_t ep_addr = USB_common::get_ep_addr(ep.num);
+
+	if(ep_addr == 0)
+	{
+		volatile USB_OTG_INEndpointTypeDef*  const ep_in  = get_ep_in(ep_addr);
+		volatile USB_OTG_OUTEndpointTypeDef* const ep_out = get_ep_out(ep_addr);
+
+		uint8_t mpsize = 0;
+		ep_cfg ep0_cfg = ep;
+		if(ep.size <= 8)
+		{
+			ep0_cfg.size = 8;
+			mpsize = 3;
+		}
+		else if(ep.size <= 16)
+		{
+			ep0_cfg.size = 16;
+			mpsize = 2;
+		}
+		else if(ep.size <= 32)
+		{
+			ep0_cfg.size = 32;
+			mpsize = 1;
+		}
+		else
+		{
+			ep0_cfg.size = 64;
+			mpsize = 0;
+		}
+
+		OTGD->DAINTMSK |= 0x00010001;
+
+		ep_in->DIEPCTL = USB_OTG_DIEPCTL_SNAK | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, ep0_cfg.size);
+		ep_out->DOEPTSIZ =  _VAL2FLD(USB_OTG_DOEPTSIZ_STUPCNT, 1) | USB_OTG_DOEPTSIZ_PKTCNT | _VAL2FLD(USB_OTG_DOEPTSIZ_XFRSIZ, ep0_cfg.size);
+		ep_out->DOEPCTL = USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK | _VAL2FLD(USB_OTG_DOEPCTL_MPSIZ, mpsize);
+	}
+
+	if(USB_common::is_in_ep(ep.num))
+	{
+		volatile USB_OTG_INEndpointTypeDef* const ep_in = get_ep_in(ep_addr);
+		ep_in->DIEPCTL;
+
+	}
+	else
+	{
+		volatile USB_OTG_OUTEndpointTypeDef* const ep_out = get_ep_out(ep_addr);
+		ep_out->DOEPCTL;
+	}
+
+	return false;
 }
-bool stm32_h7xx_otghs::ep_config(const uint8_t ep)
+bool stm32_h7xx_otghs::ep_unconfig(const uint8_t ep)
 {
-	return 0;
-}
-void stm32_h7xx_otghs::ep_unconfig(const uint8_t ep)
-{
-	
+	return false;	
 }
 
 bool stm32_h7xx_otghs::ep_is_stalled(const uint8_t ep)
@@ -212,13 +337,13 @@ bool stm32_h7xx_otghs::ep_is_stalled(const uint8_t ep)
 
 	if(USB_common::is_in_ep(ep))
 	{
-		volatile USB_OTG_INEndpointTypeDef* epin = EPIN(USB_common::get_ep_addr(ep));
+		volatile USB_OTG_INEndpointTypeDef* epin = get_ep_in(USB_common::get_ep_addr(ep));
 
 		is_stalled = epin->DIEPCTL & USB_OTG_DIEPCTL_STALL;
 	}
 	else
 	{
-		volatile USB_OTG_OUTEndpointTypeDef* epout = EPOUT(USB_common::get_ep_addr(ep));
+		volatile USB_OTG_OUTEndpointTypeDef* epout = get_ep_out(USB_common::get_ep_addr(ep));
 
 		is_stalled = epout->DOEPCTL | USB_OTG_DOEPCTL_STALL;
 	}
@@ -229,13 +354,13 @@ void stm32_h7xx_otghs::ep_stall(const uint8_t ep)
 {
 	if(USB_common::is_in_ep(ep))
 	{
-		volatile USB_OTG_INEndpointTypeDef* epin = EPIN(USB_common::get_ep_addr(ep));
+		volatile USB_OTG_INEndpointTypeDef* epin = get_ep_in(USB_common::get_ep_addr(ep));
 
 		Register_util::set_bits(&epin->DIEPCTL, USB_OTG_DIEPCTL_STALL);
 	}
 	else
 	{
-		volatile USB_OTG_OUTEndpointTypeDef* epout = EPOUT(USB_common::get_ep_addr(ep));
+		volatile USB_OTG_OUTEndpointTypeDef* epout = get_ep_out(USB_common::get_ep_addr(ep));
 
 		Register_util::set_bits(&epout->DOEPCTL, USB_OTG_DOEPCTL_STALL);
 	}
@@ -244,13 +369,13 @@ void stm32_h7xx_otghs::ep_unstall(const uint8_t ep)
 {
 	if(USB_common::is_in_ep(ep))
 	{
-		volatile USB_OTG_INEndpointTypeDef* epin = EPIN(USB_common::get_ep_addr(ep));
+		volatile USB_OTG_INEndpointTypeDef* epin = get_ep_in(USB_common::get_ep_addr(ep));
 
 		Register_util::clear_bits(&epin->DIEPCTL, USB_OTG_DIEPCTL_STALL);
 	}
 	else
 	{
-		volatile USB_OTG_OUTEndpointTypeDef* epout = EPOUT(USB_common::get_ep_addr(ep));
+		volatile USB_OTG_OUTEndpointTypeDef* epout = get_ep_out(USB_common::get_ep_addr(ep));
 
 		Register_util::clear_bits(&epout->DOEPCTL, USB_OTG_DOEPCTL_STALL);
 	}
@@ -258,7 +383,7 @@ void stm32_h7xx_otghs::ep_unstall(const uint8_t ep)
 
 size_t stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint16_t len)
 {
-	volatile uint32_t* fifo = EPFIFO(ep);
+	volatile uint32_t* fifo = get_ep_fifo(ep);
 
 	const size_t len32 = (len + 3) / 4;
 
@@ -339,7 +464,7 @@ size_t stm32_h7xx_otghs::ep_read(const uint8_t ep, uint8_t* const buf, const uin
 
 	for(size_t i = 0; i < blen; i += 4)
 	{
-		const uint32_t temp = *EPFIFO(0);
+		const uint32_t temp = *get_ep_fifo(0);
 
 		const size_t bleft = max_len - i;
 		if(bleft >= 4)
@@ -407,7 +532,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 			OTG->GINTSTS = USB_OTG_GINTSTS_USBRST;
 
-			for(uint8_t i = 0; i < NUM_EP; i++)
+			for(uint8_t i = 0; i < MAX_NUM_EP; i++)
 			{
 				ep_unconfig(i);
 			}
@@ -451,7 +576,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 				case 0x03:
 				{
 					//OUT transfer completed, int
-					Register_util::set_bits(&(EPOUT(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+					Register_util::set_bits(&(get_ep_out(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
 					continue;
 				}
@@ -460,7 +585,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS 0x04");
 
 					//SETUP transaction completed, int
-					Register_util::set_bits(&(EPOUT(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+					Register_util::set_bits(&(get_ep_out(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
 					continue;
 				}
@@ -469,7 +594,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS 0x06");
 
 					//SETUP data packet received
-					if(EPIN(ep)->DIEPTSIZ & USB_OTG_DIEPTSIZ_PKTCNT)
+					if(get_ep_in(ep)->DIEPTSIZ & USB_OTG_DIEPTSIZ_PKTCNT)
 					{
 						flush_tx(ep);
 					}
@@ -531,12 +656,24 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 void stm32_h7xx_otghs::flush_rx()
 {
+	//verify rx read idle
+	//???
+	//verify rx write idle
+	//???
+
 	Register_util::set_bits(&OTG->GRSTCTL, USB_OTG_GRSTCTL_RXFFLSH);
 	Register_util::wait_until_clear(&OTG->GRSTCTL, USB_OTG_GRSTCTL_RXFFLSH);
 }
 
 void stm32_h7xx_otghs::flush_tx(const uint8_t ep)
 {
+	//verify tx read idle
+	//???
+	//verify tx write idle
+	Register_util::wait_until_set(&OTG->GRSTCTL, USB_OTG_GRSTCTL_AHBIDL);
+
+	Register_util::wait_until_clear(&OTG->GRSTCTL, USB_OTG_GRSTCTL_TXFFLSH);
+
 	Register_util::mask_set_bits(
 		&OTG->GRSTCTL, 
 		USB_OTG_GRSTCTL_TXFNUM, 
@@ -544,4 +681,9 @@ void stm32_h7xx_otghs::flush_tx(const uint8_t ep)
 	);
 
 	Register_util::wait_until_clear(&OTG->GRSTCTL, USB_OTG_GRSTCTL_TXFFLSH);
+}
+
+void stm32_h7xx_otghs::flush_all_tx()
+{
+	flush_tx(0x20);
 }

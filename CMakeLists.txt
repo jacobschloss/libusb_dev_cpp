@@ -16,7 +16,6 @@ add_library(usb_dev_cpp
 	src/driver/cpu/Cortex_m7.cpp
 
 	src/usb_core.cpp
-	src/usb_std.cpp
 
 	src/core/Setup_packet.cpp
 	src/core/Control_request.cpp

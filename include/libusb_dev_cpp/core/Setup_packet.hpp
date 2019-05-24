@@ -48,6 +48,22 @@ public:
 		SYNC_FRAME    = 0x0A
 	};
 
+	enum class FEATURE_SELECTOR
+	{
+		ENDPOINT_HALT        = 0,
+		DEVICE_REMOTE_WAKEUP = 1,
+		TEST_MODE            = 2
+	};
+
+	enum class TEST_MODE_SELECTOR
+	{
+		TEST_J            = 0x01,
+		TSET_K            = 0x02,
+		TEST_SE0_NAK      = 0x03,
+		TEST_PACKET       = 0x04,
+		TEST_FORCE_ENABLE = 0x05,
+	};
+
 	bool serialize(Setup_packet_array* const out_array);
 	bool deserialize(const Setup_packet_array& in_array);
 

@@ -1,5 +1,7 @@
 #include "libusb_dev_cpp/usb_core.hpp"
 
+#include "common_util/Byte_util.hpp"
+
 #include "uart1_printf.hpp"
 
 #include <functional>
@@ -47,9 +49,11 @@ bool USB_core::disconnect()
 
 bool USB_core::handle_reset()
 {
-	m_driver->ep_config(0);
-
-	m_driver->get_status().active_device_cfg = 0;
+	usb_driver_base::ep_cfg ep0;
+	ep0.num  = 0;
+	ep0.size = 8;
+	ep0.type = usb_driver_base::EP_TYPE::CONTROL;
+	m_driver->ep_config(ep0);
 
 	m_driver->set_ep_rx_callback(0x00, std::bind(&USB_core::handle_ep0_rx, this, std::placeholders::_1, std::placeholders::_2));
 	m_driver->set_ep_tx_callback(0x80, std::bind(&USB_core::handle_ep0_tx, this, std::placeholders::_1, std::placeholders::_2));
@@ -324,6 +328,20 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 	{
 		case Setup_packet::DEVICE_REQUEST::GET_STATUS:
 		{
+			req->data_stage_buffer[0] = 0;
+			req->data_stage_buffer[1] = 0;
+
+			// if(selfpowered)
+			// {
+			// 	req->data_stage_buffer[0] |= (1U << 0);
+			// }
+
+			// if(remote_wakeup)
+			// {
+			// 	req->data_stage_buffer[0] |= (1U << 1);
+			// }
+
+			r = USB_common::USB_RESP::ACK;
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::CLEAR_FEATURE:
@@ -336,22 +354,71 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_ADDRESS:
 		{
+			if(!m_driver->set_address(req->setup_packet.wValue))
+			{
+				r = USB_common::USB_RESP::FAIL;
+			}
+			else
+			{
+				r = USB_common::USB_RESP::ACK;
+			}
 			break;
 		}
-		case Setup_packet::DEVICE_REQUEST::GET_DESCRIPTOR:
-		{
-			break;
-		}
+		// handled by child class
+		// case Setup_packet::DEVICE_REQUEST::GET_DESCRIPTOR:
+		// {
+		// 	break;
+		// }
 		case Setup_packet::DEVICE_REQUEST::SET_DESCRIPTOR:
 		{
+			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::GET_CONFIGURATION:
 		{
+			if(
+				(req->setup_packet.wValue  != 0) ||
+				(req->setup_packet.wIndex  != 0) ||
+				(req->setup_packet.wLength != 1)
+				)
+			{
+				r = USB_common::USB_RESP::FAIL;
+				break;
+			}
+
+			if(!get_configuration(&(req->data_stage_buffer[0])))
+			{
+				r = USB_common::USB_RESP::FAIL;		
+			}
+			else
+			{
+				r = USB_common::USB_RESP::ACK;
+			}
+
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_CONFIGURATION:
 		{
+			if(
+				(Byte_util::get_b1(req->setup_packet.wValue) != 0) ||
+				(req->setup_packet.wIndex  != 0)                   ||
+				(req->setup_packet.wLength != 0)
+				)
+			{
+				r = USB_common::USB_RESP::FAIL;
+				break;
+			}
+
+			const uint8_t bConfigurationValue = Byte_util::get_b0(req->setup_packet.wValue);
+			if(!set_configuration(bConfigurationValue))
+			{
+				r = USB_common::USB_RESP::FAIL;		
+			}
+			else
+			{
+				r = USB_common::USB_RESP::ACK;
+			}
+			
 			break;
 		}
 		default:
@@ -387,21 +454,36 @@ USB_common::USB_RESP USB_core::handle_ep_request(Control_request* const req)
 {
 	USB_common::USB_RESP r = USB_common::USB_RESP::FAIL;
 
+	const Setup_packet::FEATURE_SELECTOR feature = static_cast<Setup_packet::FEATURE_SELECTOR>(req->setup_packet.wValue);
+	if(feature != Setup_packet::FEATURE_SELECTOR::ENDPOINT_HALT)
+	{
+		return r;
+	}
+
+	const uint8_t endpoint_idx = Byte_util::get_b0(req->setup_packet.wIndex);
+
 	switch(static_cast<Setup_packet::ENDPOINT_REQUEST>(req->setup_packet.bRequest))
 	{
-		case Setup_packet::ENDPOINT_REQUEST::GET_STATUS:
+		case Setup_packet::ENDPOINT_REQUEST::SET_FEATURE:
 		{
-			m_driver->ep_stall(req->setup_packet.wIndex);
+			m_driver->ep_stall(endpoint_idx);
 			r = USB_common::USB_RESP::ACK;
 		}
 		case Setup_packet::ENDPOINT_REQUEST::CLEAR_FEATURE:
 		{
-			m_driver->ep_unstall(req->setup_packet.wIndex);
+			m_driver->ep_unstall(endpoint_idx);
 			r = USB_common::USB_RESP::ACK;
 		}
-		case Setup_packet::ENDPOINT_REQUEST::SET_FEATURE:
+		case Setup_packet::ENDPOINT_REQUEST::GET_STATUS:
 		{
-			req->data_stage_buffer[0] = m_driver->ep_is_stalled(req->setup_packet.wIndex) ? 1 : 0;
+			if(m_driver->ep_is_stalled(endpoint_idx))
+			{
+				req->data_stage_buffer[0] = (1U << 0);
+			}
+			else
+			{
+				req->data_stage_buffer[0] = 0;
+			}
 			req->data_stage_buffer[1] = 0;
 			r = USB_common::USB_RESP::ACK;
 		}
@@ -412,6 +494,21 @@ USB_common::USB_RESP USB_core::handle_ep_request(Control_request* const req)
 		}
 	}
 	return r;
+}
+
+bool USB_core::set_configuration(const uint8_t bConfigurationValue)
+{
+	if(bConfigurationValue != 0)
+	{
+		return false;
+	}
+
+	return true;
+}
+bool USB_core::get_configuration(uint8_t* const bConfigurationValue)
+{
+	*bConfigurationValue = 0;
+	return true;
 }
 
 void USB_core::handle_ctrl_req_complete()

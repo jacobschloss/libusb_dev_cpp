@@ -60,6 +60,9 @@ protected:
 	virtual USB_common::USB_RESP handle_iface_request(Control_request* const req);
 	virtual USB_common::USB_RESP handle_ep_request(Control_request* const req);
 
+	virtual bool set_configuration(const uint8_t bConfigurationValue);
+	virtual bool get_configuration(uint8_t* const bConfigurationValue);
+
 	virtual void handle_ctrl_req_complete();
 
 	class usb_driver_buffer

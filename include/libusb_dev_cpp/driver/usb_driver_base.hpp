@@ -29,10 +29,57 @@ public:
 
 	struct usb_driver_status
 	{
-		size_t   ep0_size;
-		uint8_t  active_device_cfg;
-		// uint8_t  device_state;
-		USB_STATE  control_state;
+		size_t    ep0_size;
+		USB_STATE control_state;
+	};
+
+
+	enum class USB_SPEED
+	{
+		LS,
+		FS,
+		HS
+	};
+
+	enum class EP_TYPE
+	{
+		CONTROL,
+		ISOCHRONUS,
+		INTERRUPT,
+		BULK
+	};
+
+	struct ep_cfg
+	{
+		uint8_t num;
+		size_t  size;
+		EP_TYPE type;
+	};
+
+	static size_t get_max_bulk_ep_size(const USB_SPEED& speed)
+	{
+		size_t size = 0;
+		switch(speed)
+		{
+			case USB_SPEED::LS:
+			{
+				size = 64;
+			}
+			case USB_SPEED::FS:
+			{
+				size = 64;	
+			}
+			case USB_SPEED::HS:
+			{
+				size = 512;
+			}
+			default:
+			{
+				break;
+			}
+		}
+
+		return size;
 	};
 
 	usb_driver_base();
@@ -50,9 +97,8 @@ public:
 
 	virtual bool set_address(const uint8_t addr) = 0;
 
-	virtual bool ep_setup(const uint8_t ep) = 0;
-	virtual bool ep_config(const uint8_t ep) = 0;
-	virtual void ep_unconfig(const uint8_t ep) = 0;
+	virtual bool ep_config(const ep_cfg& ep) = 0;
+	virtual bool ep_unconfig(const uint8_t ep) = 0;
 
 	virtual bool ep_is_stalled(const uint8_t ep) = 0;
 	virtual void ep_stall(const uint8_t ep) = 0;
