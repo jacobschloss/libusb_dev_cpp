@@ -8,6 +8,49 @@ class USB_core
 {
 public:
 
+	class buffer_adapter
+	{
+	public:
+		buffer_adapter()
+		{
+			clear();
+		}
+
+		void clear()
+		{
+			buf_ptr     = nullptr;
+			buf_maxsize = 0;
+			curr_ptr    = nullptr;
+			rem_len     = 0;
+		}
+
+		void reset()
+		{
+			curr_ptr    = buf_ptr;
+			rem_len     = 0;	
+		}
+
+		void reset(uint8_t* const buf, const size_t maxlen)
+		{
+			buf_ptr     = buf;
+			buf_maxsize = maxlen;
+			curr_ptr    = buf;
+			rem_len     = 0;	
+		}
+
+		//start of buffer
+		uint8_t* buf_ptr;
+
+		//max length
+		size_t   buf_maxsize;
+
+		//current position in buffer
+		uint8_t* curr_ptr;
+
+		//remaining length
+		size_t   rem_len;
+	};
+
 	enum class USB_CMD
 	{
 		ENABLE,
@@ -24,7 +67,7 @@ public:
 	USB_core(const USB_core& rhs) = delete;
 	USB_core& operator=(const USB_core& rhs) = delete;
 
-	bool initialize(usb_driver_base* const driver, const uint8_t ep0size);
+	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const buffer_adapter& tx_buf, const buffer_adapter& rx_buf);
 	bool poll();
 
 	bool enable();
@@ -47,12 +90,12 @@ protected:
 
 	bool handle_reset();
 
-	bool handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
-	bool handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	// bool handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	// bool handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 	bool handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep);
 
-	void handle_ep_rx(const uint8_t ep);
-	void handle_ep_tx(const uint8_t ep);
+	void handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	void handle_ep_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 
 	virtual USB_common::USB_RESP process_request(Control_request* const req);
 
@@ -65,33 +108,31 @@ protected:
 
 	virtual void handle_ctrl_req_complete();
 
-	class usb_driver_buffer
+	void stall_control_ep(const uint8_t ep);
+
+	buffer_adapter m_rx_buffer;
+	buffer_adapter m_tx_buffer;
+
+	enum class USB_CONTROL_STATE
 	{
-	public:
-		usb_driver_buffer()
-		{
-			data_buf     = nullptr;
-			data_ptr     = nullptr;
-			data_count   = 0;
-			data_maxsize = 0;
-		}
-
-		//start of buffer
-		uint8_t* data_buf;
-
-		//current position in buffer
-		uint8_t* data_ptr;
-
-		//requested length
-		size_t   data_count;
-
-		//max length
-		size_t   data_maxsize;
+		//no control traffic
+		IDLE,
+		//waiting to rx control trafic
+		RXDATA,
+		//waiting to rx control trafic
+		TXDATA,
+		//waiting to send zlp
+		TX_ZLP,
+		//sent last data, waiting for completion
+		LASTDATA,
+		//dev to host
+		STATUS_IN,
+		//host to dev
+		STATUS_OUT
 	};
+	USB_CONTROL_STATE m_control_state;
 
 	usb_driver_base* m_driver;
-
-	usb_driver_buffer m_rx_buffer;
 
 	Control_request m_ctrl_req;
 	std::array<uint8_t, 64> m_ctrl_req_data;

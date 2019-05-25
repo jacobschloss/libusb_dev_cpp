@@ -14,12 +14,12 @@ public:
 	{
 		RESET,
 		SOF,
+		EARLY_SUSPEND,
 		SUSPEND,
 		WAKEUP,
-		EPRX,
-		EPTX,
-		EPSETUP,
-		ERROR
+		EP_RX,
+		EP_TX,
+		SETUP_PACKET_RX
 	};
 	static constexpr size_t USB_EVENTS_MAX = 8;
 

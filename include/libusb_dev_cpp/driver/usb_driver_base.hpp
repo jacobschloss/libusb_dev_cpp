@@ -16,24 +16,6 @@ class usb_driver_base
 {
 public:
 
-	enum class USB_STATE
-	{
-		IDLE,
-		RXDATA,
-		TXDATA,
-		TX_ZLP,
-		LASTDATA,
-		STATUS_IN,
-		STATUS_OUT
-	};
-
-	struct usb_driver_status
-	{
-		size_t    ep0_size;
-		USB_STATE control_state;
-	};
-
-
 	enum class USB_SPEED
 	{
 		LS,
@@ -46,7 +28,8 @@ public:
 		CONTROL,
 		ISOCHRONUS,
 		INTERRUPT,
-		BULK
+		BULK,
+		UNCONF
 	};
 
 	struct ep_cfg
@@ -114,16 +97,6 @@ public:
 	bool set_ep_tx_callback(const uint8_t ep, const USB_common::Event_callback& func);
 	bool set_ep_setup_callback(const uint8_t ep, const USB_common::Event_callback& func);
 
-	usb_driver_status& get_status()
-	{
-		return m_status;
-	}
-
-	const usb_driver_status& get_status() const
-	{
-		return m_status;
-	}
-
 	const USB_common::Event_callback& get_event_callback(const uint8_t ep) const
 	{
 		return m_event_callbacks[ep];
@@ -131,7 +104,7 @@ public:
 
 	const USB_common::Event_callback& get_ep_rx_callback(const uint8_t ep) const
 	{
-		return m_ep_tx_callbacks[ep];
+		return m_ep_rx_callbacks[ep];
 	}
 
 	const USB_common::Event_callback& get_ep_tx_callback(const uint8_t ep) const
@@ -146,12 +119,14 @@ public:
 
 	virtual void poll(const USB_common::Event_callback& func) = 0;
 
+	virtual const ep_cfg& get_ep0_config() const = 0;
+	virtual bool get_rx_ep_config(const uint8_t addr, ep_cfg* const out_ep) = 0;
+	virtual bool get_tx_ep_config(const uint8_t addr, ep_cfg* const out_ep) = 0;
+
 protected:
 
 	std::array<USB_common::Event_callback, USB_common::USB_EVENTS_MAX> m_event_callbacks;
 	std::array<USB_common::Event_callback, 8>                          m_ep_rx_callbacks;
 	std::array<USB_common::Event_callback, 8>                          m_ep_tx_callbacks;
 	std::array<USB_common::Event_callback, 8>                          m_ep_setup_callbacks;
-
-	usb_driver_status m_status;
 };

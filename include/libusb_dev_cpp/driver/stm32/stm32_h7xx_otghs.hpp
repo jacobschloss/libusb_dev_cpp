@@ -43,9 +43,12 @@ public:
 
 	void poll(const USB_common::Event_callback& func) override;
 
+	const ep_cfg& get_ep0_config() const override;
+	bool get_rx_ep_config(const uint8_t addr, ep_cfg* const out_ep) override;
+	bool get_tx_ep_config(const uint8_t addr, ep_cfg* const out_ep) override;
+
 protected:
 
-	
 	void flush_rx();
 	void flush_tx(const uint8_t ep);
 	void flush_all_tx();
@@ -57,4 +60,8 @@ protected:
 	static constexpr size_t RX_FIFO_SIZE = (10 + (2*MAX_RX_PACKET/4) + 2 + 2);
 	static constexpr size_t MAX_FIFO_LEN_U32 = 1024; //uint32 * 1024, 4096B
 	static constexpr size_t MAX_FIFO_LEN_U8  = 4096; //uint8  * 4096, 4096B
+
+	ep_cfg m_ep0_cfg;
+	std::array<ep_cfg, MAX_NUM_EP> m_rx_ep_cfg;
+	std::array<ep_cfg, MAX_NUM_EP> m_tx_ep_cfg;
 };

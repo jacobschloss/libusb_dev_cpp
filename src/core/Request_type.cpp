@@ -92,11 +92,11 @@ bool Request_type::deserialize(const uint8_t request_type)
 {
 	if(request_type & 0x80)
 	{
-		data_dir = DATA_DIR::HOST_TO_DEV;
+		data_dir = DATA_DIR::DEV_TO_HOST;
 	}
 	else
 	{
-		data_dir = DATA_DIR::DEV_TO_HOST;
+		data_dir = DATA_DIR::HOST_TO_DEV;
 	}
 
 	switch( (request_type & 0x60) >> 5 )
