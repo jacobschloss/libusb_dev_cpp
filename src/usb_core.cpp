@@ -57,23 +57,25 @@ bool USB_core::disconnect()
 
 bool USB_core::handle_reset()
 {
+	m_driver->set_address(0);	
+
 	usb_driver_base::ep_cfg ep0;
 	ep0.num  = 0;
-	ep0.size = 8;
+	ep0.size = 64;
 	ep0.type = usb_driver_base::EP_TYPE::CONTROL;
 	m_driver->ep_config(ep0);
 
 	m_driver->set_ep_rx_callback(0x00, std::bind(&USB_core::handle_ep_rx, this, std::placeholders::_1, std::placeholders::_2));
-	m_driver->set_ep_tx_callback(0x80, std::bind(&USB_core::handle_ep_tx, this, std::placeholders::_1, std::placeholders::_2));
+	m_driver->set_ep_tx_callback(0x00, std::bind(&USB_core::handle_ep_tx, this, std::placeholders::_1, std::placeholders::_2));
 	m_driver->set_ep_setup_callback(0x00, std::bind(&USB_core::handle_ep0_setup, this, std::placeholders::_1, std::placeholders::_2));
-
-	m_driver->set_address(0);	
 
 	return true;
 }
 
 bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 {
+	const uint8_t ep_addr = USB_common::get_ep_addr(ep);
+
 	USB_common::Event_callback func = nullptr;
 	bool ret = false;
 	switch(evt)
@@ -89,7 +91,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_event USB_EVENTS::EP_RX, ep %d", ep);
 
-			func = m_driver->get_ep_rx_callback(ep);
+			func = m_driver->get_ep_rx_callback(ep_addr);
 			if(func)
 			{
 				func(evt, ep);
@@ -100,7 +102,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_event USB_EVENTS::EP_TX");
 
-			func = m_driver->get_ep_tx_callback(ep);
+			func = m_driver->get_ep_tx_callback(ep_addr);
 			if(func)
 			{
 				func(evt, ep);
@@ -111,7 +113,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_event USB_EVENTS::SETUP_PACKET_RX");
 
-			func = m_driver->get_ep_setup_callback(ep);
+			func = m_driver->get_ep_setup_callback(ep_addr);
 			if(func)
 			{
 				func(evt, ep);
@@ -136,7 +138,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 		}
 	}
 
-	func = m_driver->get_event_callback(ep);
+	func = m_driver->get_event_callback(ep_addr);//todo use the get addr helper func
 	if(func)
 	{
 		func(evt, ep);
@@ -274,18 +276,24 @@ void USB_core::handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_rx", "USB_STATE::RXDATA");
 
-			const size_t rxlen = m_driver->ep_read(ep, m_rx_buffer.curr_ptr, m_rx_buffer.rem_len);
-			if(m_rx_buffer.rem_len < rxlen)
+			const int rxlen = m_driver->ep_read(ep, m_rx_buffer.curr_ptr, m_rx_buffer.rem_len);
+			if(rxlen < 0)
+			{
+				//error
+				stall_control_ep(ep);
+				return;				
+			}
+			else if(m_rx_buffer.rem_len < size_t(rxlen))
 			{
 				//we got too much data, that is weird
 				stall_control_ep(ep);
 				return;
 			}
-			else if(m_rx_buffer.rem_len != rxlen)
+			else if(m_rx_buffer.rem_len != size_t(rxlen))
 			{
 				//keep reading
-				m_rx_buffer.rem_len -= rxlen;
 				m_rx_buffer.curr_ptr += rxlen;
+				m_rx_buffer.rem_len -= rxlen;
 
 				//skip evt processing
 				return;
@@ -321,13 +329,13 @@ void USB_core::handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep
 	{
 		case USB_common::USB_RESP::ACK:
 		{
-		uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "process_request ACK");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "process_request ACK");
 			//did the host ask us to send data? if so, send it
 			if((req_type.data_dir == Request_type::DATA_DIR::DEV_TO_HOST))
 			{
-				if(m_rx_buffer.rem_len >= m_ctrl_req.setup_packet.wLength)
+				if(m_tx_buffer.rem_len >= m_ctrl_req.setup_packet.wLength)
 				{
-					m_rx_buffer.rem_len = m_ctrl_req.setup_packet.wLength;
+					m_tx_buffer.rem_len = m_ctrl_req.setup_packet.wLength;
 					m_control_state = USB_CONTROL_STATE::TXDATA;
 				}
 				else
@@ -335,11 +343,15 @@ void USB_core::handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep
 					m_control_state = USB_CONTROL_STATE::TX_ZLP;
 				}
 
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "process_request ACK - handling tx");
 				handle_ep_tx(event, ep | 0x80);
 			}
 			else
 			{
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "process_request ACK - sending zlp");
+
 				//otherwise send a zlp status packet
+				m_tx_buffer.reset();
 				m_driver->ep_write(ep | 0x80, 0, 0);
 				m_control_state = USB_CONTROL_STATE::STATUS_IN;
 			}
@@ -368,17 +380,30 @@ void USB_core::handle_ep_tx(const USB_common::USB_EVENTS event, const uint8_t ep
 		case USB_CONTROL_STATE::TXDATA:
 		case USB_CONTROL_STATE::TX_ZLP:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TX_ZLP or TXDATA");
+			if(m_control_state == USB_CONTROL_STATE::TXDATA)
+			{
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TXDATA");
+			}
+			else
+			{
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TX_ZLP");
+			}
 
-			const size_t ep0size = 8;
+			const size_t ep0size = m_driver->get_ep0_config().size;
 			const size_t num_to_write = std::min(m_tx_buffer.rem_len, ep0size);
 
-			size_t num_wrote = m_driver->ep_write(ep | 0x80, m_tx_buffer.curr_ptr, num_to_write);
+			int num_wrote = m_driver->ep_write(ep | 0x80, m_tx_buffer.curr_ptr, num_to_write);
 
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "wrote %d", num_wrote);
-
-			m_tx_buffer.curr_ptr += num_to_write;
-			m_tx_buffer.rem_len  -= num_to_write;
+			if(num_wrote < 0)
+			{
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "ep_write error");
+			}
+			else
+			{
+				m_tx_buffer.curr_ptr += num_wrote;
+				m_tx_buffer.rem_len  -= num_wrote;
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "wrote %d, left %d", num_wrote, m_tx_buffer.rem_len);
+			}
 
 			if(m_tx_buffer.rem_len == 0)
 			{
@@ -392,12 +417,17 @@ void USB_core::handle_ep_tx(const USB_common::USB_EVENTS event, const uint8_t ep
 		}
 		case USB_CONTROL_STATE::LASTDATA:
 		{
-			m_control_state = USB_CONTROL_STATE::STATUS_OUT;
+			//we finished sending data to the host
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "LASTDATA->IDLE");
+			m_control_state = USB_CONTROL_STATE::IDLE;
 			break;
 		}
 		case USB_CONTROL_STATE::STATUS_IN:
 		{
+			//we sent a status packet to the host
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "STATUS_IN->IDLE");
 			m_control_state = USB_CONTROL_STATE::IDLE;
+			//control complete callback?
 			break;
 		}
 		default:
@@ -485,18 +515,23 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_ADDRESS:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "SET_ADDRESS");
+
 			if((req->setup_packet.wIndex != 0) || (req->setup_packet.wLength != 0))
 			{
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "SET_ADDRESS packet invalid");
 				r = USB_common::USB_RESP::FAIL;
 				break;
 			}
 
 			if(req->setup_packet.wValue > 127)
 			{
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "SET_ADDRESS address invalid");
 				r = USB_common::USB_RESP::FAIL;
 				break;
 			}
 
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "SET_ADDRESS to %d", req->setup_packet.wValue);
 			if(!m_driver->set_address(req->setup_packet.wValue))
 			{
 				r = USB_common::USB_RESP::FAIL;
@@ -517,7 +552,7 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 			dev_desc.bDeviceClass    = 0;
 			dev_desc.bDeviceSubClass = 0;
 			dev_desc.bDeviceProtocol = 0;
-			dev_desc.bMaxPacketSize0 = 8;
+			dev_desc.bMaxPacketSize0 = m_driver->get_ep0_config().size;
 			dev_desc.idVendor  = 0x0123;
 			dev_desc.idProduct = 0x4567;
 			dev_desc.bcdDevice = Device_descriptor::build_bcd(1, 0, 0);
@@ -533,20 +568,15 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 				break;
 			}
 
-			Setup_packet::Setup_packet_array set_arr;
-			if(!req->setup_packet.serialize(&set_arr))
-			{
-				r = USB_common::USB_RESP::FAIL;
-				break;
-			}
-
 			m_tx_buffer.reset();
+			std::copy_n(desc_arr.data(), desc_arr.size(), m_tx_buffer.buf_ptr);
+			m_tx_buffer.rem_len = desc_arr.size();
 
-			std::copy_n(set_arr.data(), set_arr.size(), m_tx_buffer.buf_ptr);
-			m_tx_buffer.rem_len += set_arr.size();
-
-			std::copy_n(desc_arr.data(), desc_arr.size(), m_tx_buffer.buf_ptr + set_arr.size());
-			m_tx_buffer.rem_len += desc_arr.size();
+			//truncate if needed
+			if(req->setup_packet.wLength < m_tx_buffer.rem_len)
+			{
+				m_tx_buffer.rem_len = req->setup_packet.wLength;
+			}
 
 			r = USB_common::USB_RESP::ACK;
 
@@ -554,11 +584,14 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_DESCRIPTOR:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "SET_DESCRIPTOR");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::GET_CONFIGURATION:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "GET_CONFIGURATION");
+
 			if(
 				(req->setup_packet.wValue  != 0) ||
 				(req->setup_packet.wIndex  != 0) ||
@@ -582,6 +615,7 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_CONFIGURATION:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "SET_CONFIGURATION");
 			if(
 				(Byte_util::get_b1(req->setup_packet.wValue) != 0) ||
 				(req->setup_packet.wIndex  != 0)                   ||

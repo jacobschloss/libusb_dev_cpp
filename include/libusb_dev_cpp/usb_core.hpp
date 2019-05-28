@@ -112,7 +112,16 @@ protected:
 
 	buffer_adapter m_rx_buffer;
 	buffer_adapter m_tx_buffer;
-
+/*
+	enum class USB_DEVICE_STATE
+	{
+		DEFAULT,
+		ADDRESS,
+		CONFIGURED,
+		SUSPENDED
+	};
+	USB_DEVICE_STATE m_device_state;
+*/
 	enum class USB_CONTROL_STATE
 	{
 		//no control traffic

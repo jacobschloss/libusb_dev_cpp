@@ -87,8 +87,8 @@ public:
 	virtual void ep_stall(const uint8_t ep) = 0;
 	virtual void ep_unstall(const uint8_t ep) = 0;
 
-	virtual size_t ep_write(const uint8_t ep, const uint8_t* buf, const uint16_t len) = 0;
-	virtual size_t ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t max_len) = 0;
+	virtual int ep_write(const uint8_t ep, const uint8_t* buf, const uint16_t len) = 0;
+	virtual int ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t max_len) = 0;
 
 	virtual uint16_t get_frame_number() = 0;
 	virtual size_t get_serial_number(uint8_t* const buf, const size_t maxlen) = 0;
@@ -97,24 +97,24 @@ public:
 	bool set_ep_tx_callback(const uint8_t ep, const USB_common::Event_callback& func);
 	bool set_ep_setup_callback(const uint8_t ep, const USB_common::Event_callback& func);
 
-	const USB_common::Event_callback& get_event_callback(const uint8_t ep) const
+	const USB_common::Event_callback& get_event_callback(const uint8_t ep_addr) const
 	{
-		return m_event_callbacks[ep];
+		return m_event_callbacks[ep_addr];
 	}
 
-	const USB_common::Event_callback& get_ep_rx_callback(const uint8_t ep) const
+	const USB_common::Event_callback& get_ep_rx_callback(const uint8_t ep_addr) const
 	{
-		return m_ep_rx_callbacks[ep];
+		return m_ep_rx_callbacks[ep_addr];
 	}
 
-	const USB_common::Event_callback& get_ep_tx_callback(const uint8_t ep) const
+	const USB_common::Event_callback& get_ep_tx_callback(const uint8_t ep_addr) const
 	{
-		return m_ep_tx_callbacks[ep & 0x7F];
+		return m_ep_tx_callbacks[ep_addr];
 	}
 
-	const USB_common::Event_callback& get_ep_setup_callback(const uint8_t ep) const
+	const USB_common::Event_callback& get_ep_setup_callback(const uint8_t ep_addr) const
 	{
-		return m_ep_setup_callbacks[ep];
+		return m_ep_setup_callbacks[ep_addr];
 	}
 
 	virtual void poll(const USB_common::Event_callback& func) = 0;
