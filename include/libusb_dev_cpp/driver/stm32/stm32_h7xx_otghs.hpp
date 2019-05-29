@@ -41,6 +41,8 @@ public:
 	uint16_t get_frame_number() override;
 	size_t get_serial_number(uint8_t* const buf, const size_t maxlen) override;
 
+	USB_common::USB_SPEED get_speed() const override;
+
 	void poll(const USB_common::Event_callback& func) override;
 
 	const ep_cfg& get_ep0_config() const override;

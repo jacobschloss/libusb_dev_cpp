@@ -31,6 +31,13 @@ public:
 		NAK
 	};
 
+	enum class USB_SPEED
+	{
+		LS,
+		FS,
+		HS
+	};
+
 	typedef std::function<void(const USB_EVENTS event, const uint8_t ep)> Event_callback;
 
 	static bool is_in_ep(const uint8_t ep)

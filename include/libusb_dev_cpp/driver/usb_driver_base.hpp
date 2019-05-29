@@ -93,6 +93,8 @@ public:
 	virtual uint16_t get_frame_number() = 0;
 	virtual size_t get_serial_number(uint8_t* const buf, const size_t maxlen) = 0;
 
+	virtual USB_common::USB_SPEED get_speed() const = 0;
+
 	bool set_ep_rx_callback(const uint8_t ep, const USB_common::Event_callback& func);
 	bool set_ep_tx_callback(const uint8_t ep, const USB_common::Event_callback& func);
 	bool set_ep_setup_callback(const uint8_t ep, const USB_common::Event_callback& func);

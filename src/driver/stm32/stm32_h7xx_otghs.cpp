@@ -735,6 +735,27 @@ size_t stm32_h7xx_otghs::get_serial_number(uint8_t* const buf, const size_t maxl
 	return 0;
 }
 
+USB_common::USB_SPEED stm32_h7xx_otghs::get_speed() const
+{
+	switch(_FLD2VAL(USB_OTG_DSTS_ENUMSPD, OTGD->DSTS))
+	{
+		case 0:
+		{
+			return USB_common::USB_SPEED::HS;
+		}
+		case 2:
+		{
+			return USB_common::USB_SPEED::LS;
+		}
+		case 1:
+		case 3:
+		default:
+		{
+			return USB_common::USB_SPEED::FS;
+		}
+	}
+}
+
 void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 {
 	USB_common::USB_EVENTS event = USB_common::USB_EVENTS::RESET;
@@ -833,7 +854,9 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					//SETUP transaction completed, int
 					Register_util::set_bits(&(get_ep_out(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-					continue;
+
+					event = USB_common::USB_EVENTS::SETUP_TRX_DONE;
+					break;
 				}
 				case 0x06:
 				{

@@ -90,12 +90,9 @@ protected:
 
 	bool handle_reset();
 
-	// bool handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
-	// bool handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 	bool handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep);
-
-	void handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
-	void handle_ep_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	void handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	void handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 
 	virtual USB_common::USB_RESP process_request(Control_request* const req);
 
@@ -109,6 +106,8 @@ protected:
 	virtual void handle_ctrl_req_complete();
 
 	void stall_control_ep(const uint8_t ep);
+
+	void set_address(const uint8_t addr);
 
 	buffer_adapter m_rx_buffer;
 	buffer_adapter m_tx_buffer;
@@ -128,21 +127,22 @@ protected:
 		IDLE,
 		//waiting to rx control trafic
 		RXDATA,
-		//waiting to rx control trafic
+		//waiting to send control trafic
 		TXDATA,
 		//waiting to send zlp
-		TX_ZLP,
-		//sent last data, waiting for completion
-		LASTDATA,
-		//dev to host
+		TXZLP,
+		//waiting for zlp to finish
+		TXCOMP,
+		//status in
 		STATUS_IN,
-		//host to dev
+		//status out
 		STATUS_OUT
 	};
 	USB_CONTROL_STATE m_control_state;
 
+	std::function<void()> m_setup_complete_callback;
+
 	usb_driver_base* m_driver;
 
 	Control_request m_ctrl_req;
-	std::array<uint8_t, 64> m_ctrl_req_data;
 };

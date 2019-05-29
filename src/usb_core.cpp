@@ -55,18 +55,31 @@ bool USB_core::disconnect()
 	return m_driver->disconnect();
 }
 
+void USB_core::set_address(const uint8_t addr)
+{
+	uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "commit set_address %d", addr);
+	m_driver->set_address(addr);	
+}
+
 bool USB_core::handle_reset()
 {
 	m_driver->set_address(0);	
 
 	usb_driver_base::ep_cfg ep0;
 	ep0.num  = 0;
-	ep0.size = 64;
+	if(m_driver->get_speed() == USB_common::USB_SPEED::LS)
+	{
+		ep0.size = 8;
+	}
+	else
+	{
+		ep0.size = 64;
+	}
 	ep0.type = usb_driver_base::EP_TYPE::CONTROL;
 	m_driver->ep_config(ep0);
 
-	m_driver->set_ep_rx_callback(0x00, std::bind(&USB_core::handle_ep_rx, this, std::placeholders::_1, std::placeholders::_2));
-	m_driver->set_ep_tx_callback(0x00, std::bind(&USB_core::handle_ep_tx, this, std::placeholders::_1, std::placeholders::_2));
+	m_driver->set_ep_rx_callback(0x00, std::bind(&USB_core::handle_ep0_rx, this, std::placeholders::_1, std::placeholders::_2));
+	m_driver->set_ep_tx_callback(0x00, std::bind(&USB_core::handle_ep0_tx, this, std::placeholders::_1, std::placeholders::_2));
 	m_driver->set_ep_setup_callback(0x00, std::bind(&USB_core::handle_ep0_setup, this, std::placeholders::_1, std::placeholders::_2));
 
 	return true;
@@ -120,6 +133,11 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 			}
 			break;
 		}
+		case USB_common::USB_EVENTS::SETUP_TRX_DONE:
+		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_event USB_EVENTS::SETUP_TRX_DONE");	
+			return false;			
+		}
 		case USB_common::USB_EVENTS::EARLY_SUSPEND:
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_event USB_EVENTS::EARLY_SUSPEND");
@@ -147,21 +165,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 
 	return ret;
 }
-/*
-bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep)
-{
-	uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_ep0_rx");
 
-	return false;
-}
-
-bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep)
-{
-	uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_ep0_tx");
-
-	return false;
-}
-*/
 bool USB_core::handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
 	uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_ep0_setup");
@@ -173,14 +177,15 @@ bool USB_core::handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_
 
 	//init
 	m_control_state = USB_CONTROL_STATE::IDLE;
+	m_setup_complete_callback = nullptr;
 
-	//force read
-	handle_ep_rx(event, ep);
+	//force read & process
+	handle_ep0_rx(event, ep);
 
 	return true;
 }
 
-void USB_core::handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep)
+void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
 	uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "handle_ep_rx");
 
@@ -302,14 +307,17 @@ void USB_core::handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep
 		}
 		case USB_CONTROL_STATE::STATUS_OUT:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_rx", "USB_STATE::STATUS_OUT");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::STATUS_OUT");
 
-			m_driver->ep_read(ep, m_rx_buffer.curr_ptr, m_rx_buffer.buf_maxsize);
-
+			//handle status out packet
+			m_rx_buffer.reset();
+			m_driver->ep_read(ep, m_rx_buffer.buf_ptr, m_rx_buffer.buf_maxsize);
 			m_control_state = USB_CONTROL_STATE::IDLE;
-
-			handle_ctrl_req_complete();
-			break;
+			if(m_setup_complete_callback)
+			{
+				m_setup_complete_callback();
+			}
+			return;
 		}
 		default:
 		{
@@ -336,15 +344,11 @@ void USB_core::handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep
 				if(m_tx_buffer.rem_len >= m_ctrl_req.setup_packet.wLength)
 				{
 					m_tx_buffer.rem_len = m_ctrl_req.setup_packet.wLength;
-					m_control_state = USB_CONTROL_STATE::TXDATA;
-				}
-				else
-				{
-					m_control_state = USB_CONTROL_STATE::TX_ZLP;
 				}
 
+				m_control_state = USB_CONTROL_STATE::TXDATA;
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "process_request ACK - handling tx");
-				handle_ep_tx(event, ep | 0x80);
+				handle_ep0_tx(event, ep | 0x80);
 			}
 			else
 			{
@@ -371,24 +375,16 @@ void USB_core::handle_ep_rx(const USB_common::USB_EVENTS event, const uint8_t ep
 	}
 	
 }
-void USB_core::handle_ep_tx(const USB_common::USB_EVENTS event, const uint8_t ep)
+void USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
 	uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "");
 
 	switch(m_control_state)
 	{
 		case USB_CONTROL_STATE::TXDATA:
-		case USB_CONTROL_STATE::TX_ZLP:
 		{
-			if(m_control_state == USB_CONTROL_STATE::TXDATA)
-			{
-				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TXDATA");
-			}
-			else
-			{
-				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TX_ZLP");
-			}
-
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TXDATA");
+			
 			const size_t ep0size = m_driver->get_ep0_config().size;
 			const size_t num_to_write = std::min(m_tx_buffer.rem_len, ep0size);
 
@@ -407,31 +403,51 @@ void USB_core::handle_ep_tx(const USB_common::USB_EVENTS event, const uint8_t ep
 
 			if(m_tx_buffer.rem_len == 0)
 			{
-				if((m_control_state == USB_CONTROL_STATE::TXDATA) || (num_to_write != ep0size))
+				if(num_to_write != ep0size)
 				{
-					m_control_state = USB_CONTROL_STATE::LASTDATA;
+					m_control_state = USB_CONTROL_STATE::TXCOMP;
+				}
+				else
+				{
+					m_control_state = USB_CONTROL_STATE::TXZLP;
 				}
 			}
-
 			break;
 		}
-		case USB_CONTROL_STATE::LASTDATA:
+		case USB_CONTROL_STATE::TXZLP:
 		{
-			//we finished sending data to the host
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "LASTDATA->IDLE");
-			m_control_state = USB_CONTROL_STATE::IDLE;
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TXZLP");
+
+			const int ret = m_driver->ep_write(ep | 0x80, nullptr, 0);
+			if(ret != 0)
+			{
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "TXZLP had error on ep_write");
+			}
+
+			m_control_state = USB_CONTROL_STATE::TXCOMP;
 			break;
+		}
+		case USB_CONTROL_STATE::TXCOMP:
+		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::TXCOMP");
+			m_control_state = USB_CONTROL_STATE::STATUS_OUT;
+			break;	
 		}
 		case USB_CONTROL_STATE::STATUS_IN:
 		{
-			//we sent a status packet to the host
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "STATUS_IN->IDLE");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "USB_STATE::STATUS_IN");
+
+			//handle status in packet
 			m_control_state = USB_CONTROL_STATE::IDLE;
-			//control complete callback?
-			break;
+			if(m_setup_complete_callback)
+			{
+				m_setup_complete_callback();
+			}
+			return;
 		}
 		default:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "default, event %d, state %d", event, m_control_state);
 			break;
 		}
 	}
@@ -489,17 +505,19 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 	{
 		case Setup_packet::DEVICE_REQUEST::GET_STATUS:
 		{
-			req->data_stage_buffer[0] = 0;
-			req->data_stage_buffer[1] = 0;
+			m_tx_buffer.reset();
+			m_tx_buffer.buf_ptr[0] = 0;
+			m_tx_buffer.buf_ptr[1] = 0;
+			m_tx_buffer.rem_len = 2;
 
 			// if(selfpowered)
 			// {
-			// 	req->data_stage_buffer[0] |= (1U << 0);
+			// 	m_tx_buffer.buf_ptr[0] |= (1U << 0);
 			// }
 
 			// if(remote_wakeup)
 			// {
-			// 	req->data_stage_buffer[0] |= (1U << 1);
+			// 	m_tx_buffer.buf_ptr[0] |= (1U << 1);
 			// }
 
 			r = USB_common::USB_RESP::ACK;
@@ -531,15 +549,9 @@ USB_common::USB_RESP USB_core::handle_device_request(Control_request* const req)
 				break;
 			}
 
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "SET_ADDRESS to %d", req->setup_packet.wValue);
-			if(!m_driver->set_address(req->setup_packet.wValue))
-			{
-				r = USB_common::USB_RESP::FAIL;
-			}
-			else
-			{
-				r = USB_common::USB_RESP::ACK;
-			}
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_device_request", "Queue SET_ADDRESS to %d", req->setup_packet.wValue);
+			m_setup_complete_callback = std::bind(&USB_core::set_address, this, req->setup_packet.wValue);
+			r = USB_common::USB_RESP::ACK;
 			break;
 		}
 		// handled by child class
