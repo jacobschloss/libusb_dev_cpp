@@ -303,7 +303,9 @@ bool stm32_h7xx_otghs::disconnect()
 
 bool stm32_h7xx_otghs::set_address(const uint8_t addr)
 {
-	Register_util::mask_set_bits(&OTGD->DCFG, USB_OTG_DCFG_DAD, uint32_t(addr));
+	Register_util::mask_set_bits(&OTGD->DCFG, USB_OTG_DCFG_DAD, _VAL2FLD(USB_OTG_DCFG_DAD, addr));
+
+	uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "OTGD->DCFG 0x%08X", OTGD->DCFG);
 
 	return true;
 }
