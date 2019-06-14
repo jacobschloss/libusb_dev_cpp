@@ -125,6 +125,8 @@ public:
 	virtual bool get_rx_ep_config(const uint8_t addr, ep_cfg* const out_ep) = 0;
 	virtual bool get_tx_ep_config(const uint8_t addr, ep_cfg* const out_ep) = 0;
 
+	virtual void set_data0(const uint8_t ep) = 0;
+
 protected:
 
 	std::array<USB_common::Event_callback, USB_common::USB_EVENTS_MAX> m_event_callbacks;

@@ -51,6 +51,8 @@ public:
 
 protected:
 
+	void set_data0(const uint8_t ep) override;
+
 	void flush_rx();
 	void flush_tx(const uint8_t ep);
 	void flush_all_tx();

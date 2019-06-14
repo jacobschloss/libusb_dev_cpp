@@ -26,10 +26,10 @@ public:
 
 	enum class TYPE
 	{
-		STANDARD = 0,
-		CLASS    = 1,
-		VENDOR   = 2,
-		RESEVED  = 3
+		STANDARD  = 0,
+		CLASS     = 1,
+		VENDOR    = 2,
+		RESERVED  = 3
 	};
 
 	enum class RECIPIENT

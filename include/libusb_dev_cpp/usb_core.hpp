@@ -96,9 +96,9 @@ protected:
 
 	virtual USB_common::USB_RESP process_request(Control_request* const req);
 
-	virtual USB_common::USB_RESP handle_device_request(Control_request* const req);
-	virtual USB_common::USB_RESP handle_iface_request(Control_request* const req);
-	virtual USB_common::USB_RESP handle_ep_request(Control_request* const req);
+	virtual USB_common::USB_RESP handle_std_device_request(Control_request* const req);
+	virtual USB_common::USB_RESP handle_std_iface_request(Control_request* const req);
+	virtual USB_common::USB_RESP handle_std_ep_request(Control_request* const req);
 
 	virtual bool set_configuration(const uint8_t bConfigurationValue);
 	virtual bool get_configuration(uint8_t* const bConfigurationValue);
@@ -145,4 +145,6 @@ protected:
 	usb_driver_base* m_driver;
 
 	Control_request m_ctrl_req;
+
+	uint8_t m_address;
 };

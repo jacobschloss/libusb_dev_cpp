@@ -23,9 +23,9 @@ public:
 
 	bool fill_descriptors();
 
-	USB_common::USB_RESP handle_device_request(Control_request* const req) override;
-	USB_common::USB_RESP handle_iface_request(Control_request* const req) override;
-	USB_common::USB_RESP handle_ep_request(Control_request* const req) override;
+	USB_common::USB_RESP handle_std_device_request(Control_request* const req) override;
+	USB_common::USB_RESP handle_std_iface_request(Control_request* const req) override;
+	USB_common::USB_RESP handle_std_ep_request(Control_request* const req) override;
 
 	bool set_configuration(const uint8_t bConfigurationValue) override;
 	bool get_configuration(uint8_t* const bConfigurationValue) override;

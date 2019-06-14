@@ -46,7 +46,7 @@ bool Request_type::serialize(uint8_t* const out_request_type)
 			req_type_temp |= (2 << 5);
 			break;
 		}
-		case TYPE::RESEVED:
+		case TYPE::RESERVED:
 		{
 			req_type_temp |= (3 << 5);
 			break;
@@ -118,7 +118,7 @@ bool Request_type::deserialize(const uint8_t request_type)
 		}
 		case 3U:
 		{
-			type = TYPE::RESEVED;
+			type = TYPE::RESERVED;
 			break;
 		}
 		default:

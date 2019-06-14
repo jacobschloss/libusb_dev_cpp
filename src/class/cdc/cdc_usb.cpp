@@ -65,7 +65,7 @@ bool CDC_usb::fill_descriptors()
 	return true;
 }
 
-USB_common::USB_RESP CDC_usb::handle_device_request(Control_request* const req)
+USB_common::USB_RESP CDC_usb::handle_std_device_request(Control_request* const req)
 {
 	USB_common::USB_RESP r = USB_common::USB_RESP::FAIL;
 
@@ -107,18 +107,18 @@ USB_common::USB_RESP CDC_usb::handle_device_request(Control_request* const req)
 		default:
 		{
 			//try the base class
-			r = USB_core::handle_device_request(req);
+			r = USB_core::handle_std_device_request(req);
 			break;
 		}
 	}
 
 	return r;
 }
-USB_common::USB_RESP CDC_usb::handle_iface_request(Control_request* const req)
+USB_common::USB_RESP CDC_usb::handle_std_iface_request(Control_request* const req)
 {
 	return USB_common::USB_RESP::FAIL;
 }
-USB_common::USB_RESP CDC_usb::handle_ep_request(Control_request* const req)
+USB_common::USB_RESP CDC_usb::handle_std_ep_request(Control_request* const req)
 {
 	return USB_common::USB_RESP::FAIL;
 }
