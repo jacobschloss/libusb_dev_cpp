@@ -20,7 +20,8 @@ public:
 		EP_RX,
 		EP_TX,
 		SETUP_PACKET_RX,
-		SETUP_TRX_DONE
+		SETUP_TRX_DONE,
+		NONE
 	};
 	static constexpr size_t USB_EVENTS_MAX = 8;
 

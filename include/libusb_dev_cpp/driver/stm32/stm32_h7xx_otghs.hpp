@@ -49,6 +49,16 @@ public:
 	bool get_rx_ep_config(const uint8_t addr, ep_cfg* const out_ep) override;
 	bool get_tx_ep_config(const uint8_t addr, ep_cfg* const out_ep) override;
 
+	const std::array<uint8_t, 8>& get_last_setup_packet() const override
+	{
+		return m_last_setup_packet;
+	}
+
+	const Data_packet& get_last_data_packet() const override
+	{
+		return m_last_data_packet;
+	}
+
 protected:
 
 	void set_data0(const uint8_t ep) override;
@@ -70,4 +80,7 @@ protected:
 	ep_cfg m_ep0_cfg;
 	std::array<ep_cfg, MAX_NUM_EP> m_rx_ep_cfg;
 	std::array<ep_cfg, MAX_NUM_EP> m_tx_ep_cfg;
+
+	std::array<uint8_t, 8> m_last_setup_packet;
+	Data_packet m_last_data_packet;
 };

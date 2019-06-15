@@ -39,6 +39,27 @@ public:
 		EP_TYPE type;
 	};
 
+	struct Data_packet
+	{
+		std::array<uint8_t, 512> buf;
+		size_t len;
+
+		uint8_t* data()
+		{
+			return buf.data();
+		}
+
+		const uint8_t* data() const
+		{
+			return buf.data();
+		}
+
+		size_t size() const
+		{
+			return len;
+		}
+	};
+
 	static size_t get_max_bulk_ep_size(const USB_SPEED& speed)
 	{
 		size_t size = 0;
@@ -126,6 +147,10 @@ public:
 	virtual bool get_tx_ep_config(const uint8_t addr, ep_cfg* const out_ep) = 0;
 
 	virtual void set_data0(const uint8_t ep) = 0;
+
+	virtual const std::array<uint8_t, 8>& get_last_setup_packet() const = 0;
+
+	virtual const Data_packet& get_last_data_packet() const = 0;
 
 protected:
 

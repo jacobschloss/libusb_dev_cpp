@@ -143,6 +143,11 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 			//we are suspended
 			break;
 		}
+		case USB_common::USB_EVENTS::NONE:
+		{
+			//ISR triggered but we don't care
+			break;
+		}
 		default:
 		{
 			break;
@@ -182,12 +187,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_CONTROL_STATE::IDLE:
 		{
-			Setup_packet::Setup_packet_array setup_packet_array;
-			if(0x08 != m_driver->ep_read(ep, setup_packet_array.data(), setup_packet_array.size()))
-			{
-				stall_control_ep(ep);
-				return;
-			}
+			Setup_packet::Setup_packet_array setup_packet_array = m_driver->get_last_setup_packet();
 
 			//decode
 			m_ctrl_req = Control_request();
@@ -262,24 +262,22 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::RXDATA:
 		{
-			const int rxlen = m_driver->ep_read(ep, m_rx_buffer.curr_ptr, m_rx_buffer.rem_len);
-			if(rxlen < 0)
-			{
-				//error
-				stall_control_ep(ep);
-				return;				
-			}
-			else if(m_rx_buffer.rem_len < size_t(rxlen))
+			auto& packet = m_driver->get_last_data_packet();
+
+			size_t to_copy = std::min(packet.size(), m_rx_buffer.rem_len);
+			std::copy_n(packet.data(), to_copy, m_rx_buffer.curr_ptr);
+
+			if(m_rx_buffer.rem_len < packet.size())
 			{
 				//we got too much data, that is weird
 				stall_control_ep(ep);
 				return;
 			}
-			else if(m_rx_buffer.rem_len != size_t(rxlen))
+			else if(m_rx_buffer.rem_len != packet.size())
 			{
 				//keep reading
-				m_rx_buffer.curr_ptr += rxlen;
-				m_rx_buffer.rem_len -= rxlen;
+				m_rx_buffer.curr_ptr += packet.size();
+				m_rx_buffer.rem_len -= packet.size();
 
 				//skip evt processing
 				return;
@@ -290,7 +288,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		{
 			//handle status out packet
 			m_rx_buffer.reset();
-			m_driver->ep_read(ep, m_rx_buffer.buf_ptr, m_rx_buffer.buf_maxsize);
+			
 			m_control_state = USB_CONTROL_STATE::IDLE;
 			if(m_setup_complete_callback)
 			{
@@ -317,6 +315,8 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_common::USB_RESP::ACK:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - ACK");
+
 			//did the host ask us to send data? if so, send it
 			if((req_type.data_dir == Request_type::DATA_DIR::DEV_TO_HOST))
 			{
@@ -330,6 +330,8 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 			}
 			else
 			{
+				uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - zlp");
+
 				//otherwise send a zlp status packet
 				m_tx_buffer.reset();
 				m_driver->ep_write(ep | 0x80, 0, 0);
@@ -339,11 +341,14 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_common::USB_RESP::NAK:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - NAK");
+
 			m_control_state = USB_CONTROL_STATE::STATUS_IN;
 			break;
 		}
 		default:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - default");
 			//invalid state, reset control endpoint
 			stall_control_ep(ep);
 			break;
@@ -357,6 +362,8 @@ void USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_CONTROL_STATE::TXDATA:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXDATA", "");
+
 			const size_t ep0size = m_driver->get_ep0_config().size;
 			const size_t num_to_write = std::min(m_tx_buffer.rem_len, ep0size);
 
@@ -388,6 +395,8 @@ void USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::TXZLP:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXZLP", "");
+
 			const int ret = m_driver->ep_write(ep | 0x80, nullptr, 0);
 			if(ret != 0)
 			{
@@ -399,11 +408,15 @@ void USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::TXCOMP:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXCOMP", "");
+
 			m_control_state = USB_CONTROL_STATE::STATUS_OUT;
 			break;	
 		}
 		case USB_CONTROL_STATE::STATUS_IN:
 		{
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::STATUS_IN", "");
+
 			m_control_state = USB_CONTROL_STATE::IDLE;
 			//tx complete, so status in ack sent
 			//call the deffered process callback
@@ -543,8 +556,8 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "Queue SET_ADDRESS to %d", req->setup_packet.wValue);
 			
 			// m_address = req->setup_packet.wValue;
-			m_setup_complete_callback = std::bind(&USB_core::set_address, this, req->setup_packet.wValue);
-			// set_address(req->setup_packet.wValue);
+			// m_setup_complete_callback = std::bind(&USB_core::set_address, this, req->setup_packet.wValue);
+			set_address(req->setup_packet.wValue);
 			r = USB_common::USB_RESP::ACK;
 			break;
 		}
