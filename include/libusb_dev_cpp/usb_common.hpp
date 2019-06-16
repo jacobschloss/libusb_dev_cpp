@@ -19,8 +19,8 @@ public:
 		WAKEUP,
 		EP_RX,
 		EP_TX,
-		SETUP_PACKET_RX,
-		SETUP_TRX_DONE,
+		CTRL_SETUP_PHASE_DONE,
+		CTRL_STATUS_PHASE,
 		NONE
 	};
 	static constexpr size_t USB_EVENTS_MAX = 8;

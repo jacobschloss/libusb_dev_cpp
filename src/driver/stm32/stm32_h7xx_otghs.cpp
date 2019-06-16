@@ -862,7 +862,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 			if(DIEPINT & USB_OTG_DIEPINT_XFRC)
 			{
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_IEPINT", "DIEPINT[%d] XFRC 0x%08X", ep_num, DIEPINT);
-				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "event EP_TX");
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_IEPINT", "event EP_TX");
 
 				//transfer complete
 				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_XFRC;
@@ -907,6 +907,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 				get_ep_out(ep_num)->DOEPINT = USB_OTG_DOEPINT_XFRC;
 
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "event EP_RX");
 				event = USB_common::USB_EVENTS::EP_RX;
 			}
 			else if(DOEPINT & USB_OTG_DOEPINT_STUP)
@@ -929,7 +930,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_DOEPINT_STUP", "PKTCNT %08X", PKTCNT);
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_DOEPINT_STUP", "STUPCNT %08X", STUPCNT);
 
-				event = USB_common::USB_EVENTS::SETUP_PACKET_RX;
+				event = USB_common::USB_EVENTS::CTRL_SETUP_PHASE_DONE;
 			}
 			else if(DOEPINT & USB_OTG_DOEPINT_OTEPSPR)
 			{
@@ -938,6 +939,8 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 				//Status phase received for control write
 
 				//we are now in status phase, send an ACK or stall for the status phase
+
+				event = USB_common::USB_EVENTS::CTRL_STATUS_PHASE;
 			}
 			
 			//USB_OTG_DOEPINT_EPDISD//Endpoint disabled interrupt
@@ -983,7 +986,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 					for(size_t i = 0; i < BCNT; i++)
 					{
-						uart1_printf<16>("%02X ", m_last_setup_packet[i]);
+						uart1_printf<16>("%02X ", m_last_data_packet.buf[i]);
 					}
 					uart1_printf<16>("\r\n");
 				}
@@ -992,13 +995,14 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 			}
 			case 3://out txfr done
 			{
-				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "event EP_RX");
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "OUT TXFR DONE");
+
+				//rearm ep, dispatch will occur in USB_OTG_DOEPINT_XFRC
 
 				get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
-				event = USB_common::USB_EVENTS::EP_RX;
 				break;
 			}
-			case 6://setup rx
+			case 6://setup packet rx
 			{
 				//wait to process until later in the ep isr
 				if(BCNT != 0)
@@ -1019,8 +1023,6 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "event SETUP_PACKET_RX");
 
 				get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
-
-				event = USB_common::USB_EVENTS::SETUP_PACKET_RX;
 				break;
 			}
 			case 1://global nak

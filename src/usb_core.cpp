@@ -1,6 +1,9 @@
 #include "libusb_dev_cpp/usb_core.hpp"
 
 #include "libusb_dev_cpp/descriptor/Device_descriptor.hpp"
+#include "libusb_dev_cpp/descriptor/Configuration_descriptor.hpp"
+
+#include "libusb_dev_cpp/core/Setup_packet.hpp"
 
 #include "common_util/Byte_util.hpp"
 
@@ -120,7 +123,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 			}
 			break;
 		}
-		case USB_common::USB_EVENTS::SETUP_PACKET_RX:
+		case USB_common::USB_EVENTS::CTRL_SETUP_PHASE_DONE:
 		{
 			func = m_driver->get_ep_setup_callback(ep_addr);
 			if(func)
@@ -129,7 +132,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 			}
 			break;
 		}
-		case USB_common::USB_EVENTS::SETUP_TRX_DONE:
+		case USB_common::USB_EVENTS::CTRL_STATUS_PHASE:
 		{
 			return false;			
 		}
@@ -166,7 +169,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 
 bool USB_core::handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
-	if(event != USB_common::USB_EVENTS::SETUP_PACKET_RX)
+	if(event != USB_common::USB_EVENTS::CTRL_SETUP_PHASE_DONE)
 	{
 		return false;
 	}
@@ -566,50 +569,98 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_DESCRIPTOR");
 
-			Device_descriptor dev_desc;
-			dev_desc.bcdUSB = Device_descriptor::build_bcd(2, 0, 0);
-			dev_desc.bDeviceClass    = 0;
-			dev_desc.bDeviceSubClass = 0;
-			dev_desc.bDeviceProtocol = 0;
-			dev_desc.bMaxPacketSize0 = m_driver->get_ep0_config().size;
-			dev_desc.idVendor  = 0x0123;
-			dev_desc.idProduct = 0x4567;
-			dev_desc.bcdDevice = Device_descriptor::build_bcd(1, 0, 0);
-			dev_desc.iManufacturer      = 0;
-			dev_desc.iProduct           = 0;
-			dev_desc.iSerialNumber      = 0;
-			dev_desc.bNumConfigurations = 1;
+			const Setup_packet::DESCRIPTOR_TYPE desc_type = static_cast<Setup_packet::DESCRIPTOR_TYPE>(Byte_util::get_b1(req->setup_packet.wValue));
+			const uint8_t desc_index = Byte_util::get_b0(req->setup_packet.wValue);
 
-			Device_descriptor::Device_descriptor_array desc_arr;
-			if(!dev_desc.serialize(&desc_arr))
+			switch(desc_type)
 			{
-				r = USB_common::USB_RESP::FAIL;
-				break;
+				case Setup_packet::DESCRIPTOR_TYPE::DEVICE:
+				{
+					Device_descriptor dev_desc;
+					dev_desc.bcdUSB = Device_descriptor::build_bcd(2, 0, 0);
+					dev_desc.bDeviceClass    = 0;
+					dev_desc.bDeviceSubClass = 0;
+					dev_desc.bDeviceProtocol = 0;
+					dev_desc.bMaxPacketSize0 = m_driver->get_ep0_config().size;
+					dev_desc.idVendor  = 0x0123;
+					dev_desc.idProduct = 0x4567;
+					dev_desc.bcdDevice = Device_descriptor::build_bcd(1, 0, 0);
+					dev_desc.iManufacturer      = 0;
+					dev_desc.iProduct           = 0;
+					dev_desc.iSerialNumber      = 0;
+					dev_desc.bNumConfigurations = 1;
+
+					Device_descriptor::Device_descriptor_array desc_arr;
+					if(!dev_desc.serialize(&desc_arr))
+					{
+						r = USB_common::USB_RESP::FAIL;
+						break;
+					}
+
+					m_tx_buffer.reset();
+					std::copy_n(desc_arr.data(), desc_arr.size(), m_tx_buffer.buf_ptr);
+					m_tx_buffer.rem_len = desc_arr.size();
+
+					//truncate if needed
+					if(req->setup_packet.wLength < m_tx_buffer.rem_len)
+					{
+						m_tx_buffer.rem_len = req->setup_packet.wLength;
+					}
+
+					r = USB_common::USB_RESP::ACK;
+					break;
+				}
+				case Setup_packet::DESCRIPTOR_TYPE::CONFIGURATION:
+				{
+					Configuration_descriptor config_desc;
+					config_desc.wTotalLength = 9;
+					config_desc.bNumInterfaces = 0;
+					config_desc.bConfigurationValue = 0;
+					config_desc.iConfiguration = 0;
+					config_desc.bmAttributes = 0;
+					config_desc.bMaxPower = Configuration_descriptor::ma_to_maxpower(150);
+
+					Configuration_descriptor::Configuration_descriptor_array desc_arr;
+					if(!config_desc.serialize(&desc_arr))
+					{
+						r = USB_common::USB_RESP::FAIL;
+						break;
+					}
+
+					m_tx_buffer.reset();
+					std::copy_n(desc_arr.data(), desc_arr.size(), m_tx_buffer.buf_ptr);
+					m_tx_buffer.rem_len = desc_arr.size();
+
+					//truncate if needed
+					if(req->setup_packet.wLength < m_tx_buffer.rem_len)
+					{
+						m_tx_buffer.rem_len = req->setup_packet.wLength;
+					}
+
+					r = USB_common::USB_RESP::ACK;
+					break;
+				}
+				case Setup_packet::DESCRIPTOR_TYPE::STRING:
+				case Setup_packet::DESCRIPTOR_TYPE::INTERFACE:
+				case Setup_packet::DESCRIPTOR_TYPE::ENDPOINT:
+				default:
+				{
+					r = USB_common::USB_RESP::NAK;
+					break;
+				}
 			}
-
-			m_tx_buffer.reset();
-			std::copy_n(desc_arr.data(), desc_arr.size(), m_tx_buffer.buf_ptr);
-			m_tx_buffer.rem_len = desc_arr.size();
-
-			//truncate if needed
-			if(req->setup_packet.wLength < m_tx_buffer.rem_len)
-			{
-				m_tx_buffer.rem_len = req->setup_packet.wLength;
-			}
-
-			r = USB_common::USB_RESP::ACK;
 
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_DESCRIPTOR:
 		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_DESCRIPTOR");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_DESCRIPTOR");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::GET_CONFIGURATION:
 		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_CONFIGURATION");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_CONFIGURATION");
 
 			if(
 				(req->setup_packet.wValue  != 0) ||
@@ -634,7 +685,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_CONFIGURATION:
 		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_CONFIGURATION");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_CONFIGURATION");
 			if(
 				(Byte_util::get_b1(req->setup_packet.wValue) != 0) ||
 				(req->setup_packet.wIndex  != 0)                   ||

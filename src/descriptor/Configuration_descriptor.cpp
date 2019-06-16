@@ -18,7 +18,7 @@ bool Configuration_descriptor::serialize(Configuration_descriptor_array* const o
 	(*out_array)[4] = bNumInterfaces;
 	(*out_array)[5] = bConfigurationValue;
 	(*out_array)[6] = iConfiguration;
-	(*out_array)[7] = bmAttributes;
+	(*out_array)[7] = bmAttributes | 0x80;
 	(*out_array)[8] = bMaxPower;
 
 	return true;

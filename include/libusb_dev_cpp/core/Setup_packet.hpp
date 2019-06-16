@@ -64,6 +64,17 @@ public:
 		TEST_FORCE_ENABLE = 0x05,
 	};
 
+	enum class DESCRIPTOR_TYPE
+	{
+		DEVICE                    = 0x01,
+		CONFIGURATION             = 0x02,
+		STRING                    = 0x03,
+		INTERFACE                 = 0x04,
+		ENDPOINT                  = 0x05,
+		DEVICE_QUALIFIER          = 0x06,
+		OTHER_SPEED_CONFIGURATION = 0x07
+	};
+
 	bool serialize(Setup_packet_array* const out_array);
 	bool deserialize(const Setup_packet_array& in_array);
 
