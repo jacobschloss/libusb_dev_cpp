@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+
 #include <array>
 
 #include <cstdint>
 
-class Interface_descriptor
+class Interface_descriptor : public Descriptor_base
 {
 public:
 

@@ -1,9 +1,9 @@
 #include "libusb_dev_cpp/usb_core.hpp"
 
+#include "libusb_dev_cpp/usb_common.hpp"
+
 #include "libusb_dev_cpp/descriptor/Device_descriptor.hpp"
 #include "libusb_dev_cpp/descriptor/Configuration_descriptor.hpp"
-
-#include "libusb_dev_cpp/core/Setup_packet.hpp"
 
 #include "common_util/Byte_util.hpp"
 
@@ -569,12 +569,12 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_DESCRIPTOR");
 
-			const Setup_packet::DESCRIPTOR_TYPE desc_type = static_cast<Setup_packet::DESCRIPTOR_TYPE>(Byte_util::get_b1(req->setup_packet.wValue));
+			const USB_common::DESCRIPTOR_TYPE desc_type = static_cast<USB_common::DESCRIPTOR_TYPE>(Byte_util::get_b1(req->setup_packet.wValue));
 			const uint8_t desc_index = Byte_util::get_b0(req->setup_packet.wValue);
 
 			switch(desc_type)
 			{
-				case Setup_packet::DESCRIPTOR_TYPE::DEVICE:
+				case USB_common::DESCRIPTOR_TYPE::DEVICE:
 				{
 					Device_descriptor dev_desc;
 					dev_desc.bcdUSB = Device_descriptor::build_bcd(2, 0, 0);
@@ -610,7 +610,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 					r = USB_common::USB_RESP::ACK;
 					break;
 				}
-				case Setup_packet::DESCRIPTOR_TYPE::CONFIGURATION:
+				case USB_common::DESCRIPTOR_TYPE::CONFIGURATION:
 				{
 					Configuration_descriptor config_desc;
 					config_desc.wTotalLength = 9;
@@ -640,9 +640,9 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 					r = USB_common::USB_RESP::ACK;
 					break;
 				}
-				case Setup_packet::DESCRIPTOR_TYPE::STRING:
-				case Setup_packet::DESCRIPTOR_TYPE::INTERFACE:
-				case Setup_packet::DESCRIPTOR_TYPE::ENDPOINT:
+				case USB_common::DESCRIPTOR_TYPE::STRING:
+				case USB_common::DESCRIPTOR_TYPE::INTERFACE:
+				case USB_common::DESCRIPTOR_TYPE::ENDPOINT:
 				default:
 				{
 					r = USB_common::USB_RESP::NAK;

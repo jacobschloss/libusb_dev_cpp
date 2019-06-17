@@ -39,6 +39,17 @@ public:
 		HS
 	};
 
+	enum class DESCRIPTOR_TYPE
+	{
+		DEVICE                    = 0x01,
+		CONFIGURATION             = 0x02,
+		STRING                    = 0x03,
+		INTERFACE                 = 0x04,
+		ENDPOINT                  = 0x05,
+		DEVICE_QUALIFIER          = 0x06,
+		OTHER_SPEED_CONFIGURATION = 0x07
+	};
+
 	typedef std::function<void(const USB_EVENTS event, const uint8_t ep)> Event_callback;
 
 	static bool is_in_ep(const uint8_t ep)

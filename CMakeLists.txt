@@ -21,6 +21,13 @@ add_library(usb_dev_cpp
 	src/core/Control_request.cpp
 	src/core/Request_type.cpp
 	src/core/Get_descriptor.cpp
+
+	src/util/Config_desc_table.cpp
+	src/util/Desc_table_base.cpp
+	src/util/Descriptor_table.cpp
+	src/util/Iface_desc_table.cpp
+	src/util/String_desc_table.cpp
+
 )
 
 target_include_directories(usb_dev_cpp PUBLIC

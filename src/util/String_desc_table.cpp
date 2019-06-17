@@ -1,0 +1,1 @@
+#include "libusb_dev_cpp/util/String_desc_table.hpp"
