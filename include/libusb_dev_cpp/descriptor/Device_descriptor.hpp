@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+// #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include "common_util/Byte_util.hpp"
 
@@ -15,7 +15,8 @@
 
 #include <cstdint>
 
-class Device_descriptor : public Descriptor_base
+// class Device_descriptor : public Descriptor_base
+class Device_descriptor
 {
 public:
 

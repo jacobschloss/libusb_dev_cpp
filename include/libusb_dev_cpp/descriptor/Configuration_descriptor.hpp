@@ -7,18 +7,20 @@
 
 #pragma once
 
-#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+// #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-class Configuration_descriptor : public Descriptor_base
+// class Configuration_descriptor : public Descriptor_base
+class Configuration_descriptor
 {
 public:
 
-	enum class Attributes
+	enum class ATTRIBUTES
 	{
+		NONE          = 0x00,
 		SELF_POWERED  = 0xC0,
 		REMOTE_WAKEUP = 0xA0
 	};
@@ -30,7 +32,7 @@ public:
 
 	static constexpr uint8_t ma_to_maxpower(const uint8_t ma)
 	{
-		return (ma + 1) / 2;
+		return (ma + 1U) / 2U;
 	}
 
 	static constexpr uint8_t bLength = 9;

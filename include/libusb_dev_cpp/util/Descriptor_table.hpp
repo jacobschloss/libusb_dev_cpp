@@ -12,23 +12,87 @@
 class Descriptor_table
 {
 public:
+
+	typedef std::shared_ptr<Device_descriptor> Device_desc_ptr;
+	typedef std::shared_ptr<const Device_descriptor> Device_desc_const_ptr;
 	
-	void set_descriptor(const Desc_base_ptr& desc, const USB_common::DESCRIPTOR_TYPE type, const uint8_t idx)
+	bool set_device_descriptor(const Device_descriptor& desc, const uint8_t idx)
 	{
+		if(idx != 0)
+		{
+			return false;
+		}
+
+		m_dev_desc = std::make_shared<Device_descriptor>(desc);
+		return true;
+	}
+
+	Device_desc_const_ptr get_device_descriptor(const uint8_t idx)
+	{
+		return m_dev_desc;
+	}
+
+	void set_configuration_descriptor(const Configuration_descriptor& desc, const uint8_t idx)
+	{
+		m_config_table.set_config(idx, desc);
+	}
+
+	Config_desc_table::Config_desc_const_ptr get_configuration_descriptor(const uint8_t idx)
+	{
+		return m_config_table.get_config(idx);
+	}
+
+	void set_interface_descriptor(const Interface_descriptor& desc, const uint8_t idx)
+	{
+		m_iface_table.set_config(idx, desc);
+	}
+
+	Iface_desc_table::Iface_desc_const_ptr get_interface_descriptor(const uint8_t idx)
+	{
+		return m_iface_table.get_config(idx);
+	}
+
+	void set_endpoint_descriptor(const Endpoint_descriptor& desc, const uint8_t idx)
+	{
+		m_endpoint_table.set_config(idx, desc);
+	}
+
+	Endpoint_desc_table::Endpoint_desc_const_ptr get_endpoint_descriptor(const uint8_t idx)
+	{
+		return m_endpoint_table.get_config(idx);
+	}
+#if 0
+	bool set_descriptor(const Desc_base_ptr& desc, const USB_common::DESCRIPTOR_TYPE type, const uint8_t idx)
+	{
+		bool ret = false;
 		switch(type)
 		{
 			case USB_common::DESCRIPTOR_TYPE::DEVICE:
 			{
-				if(idx == 0)
+				auto dev_ptr = std::dynamic_pointer_cast<Device_descriptor>(desc);
+				if(dev_ptr && (idx == 0))
 				{
-					m_dev_desc = std::dynamic_pointer_cast<Device_descriptor>(desc);
+					m_dev_desc = dev_ptr;
+					ret = true;
+				}
+				else
+				{
+					ret = false;
 				}
 				break;
 			}
 			case USB_common::DESCRIPTOR_TYPE::CONFIGURATION:
 			{
-				m_config_table.set_config(idx, std::dynamic_pointer_cast<Configuration_descriptor>(desc));
-				// m_config_table.set_config(idx, *desc);
+				auto conf_ptr = std::dynamic_pointer_cast<Configuration_descriptor>(desc);
+				if(conf_ptr)
+				{
+					m_config_table.set_config(idx, conf_ptr);
+					ret = true;
+				}
+				else
+				{
+					ret = false;
+				}
 				break;
 			}
 			case USB_common::DESCRIPTOR_TYPE::STRING:
@@ -38,12 +102,30 @@ public:
 			}
 			case USB_common::DESCRIPTOR_TYPE::INTERFACE:
 			{
-				// out_desc = m_iface_table.get_config(idx);
+				auto iface_ptr = std::dynamic_pointer_cast<Interface_descriptor>(desc);
+				if(iface_ptr)
+				{
+					m_iface_table.set_config(idx, iface_ptr);
+					ret = true;
+				}
+				else
+				{
+					ret = false;
+				}
 				break;
 			}
 			case USB_common::DESCRIPTOR_TYPE::ENDPOINT:
 			{
-				// out_desc = m_endpoint_table.get_config(idx);
+				auto ep_ptr = std::dynamic_pointer_cast<Endpoint_descriptor>(desc);
+				if(ep_ptr)
+				{
+					m_endpoint_table.set_config(idx, ep_ptr);
+					ret = true;
+				}
+				else
+				{
+					ret = false;
+				}
 				break;
 			}
 			default:
@@ -51,6 +133,7 @@ public:
 				break;
 			}
 		}
+		return ret;
 	}
 
 	Desc_base_const_ptr get_descriptor(const USB_common::DESCRIPTOR_TYPE type, const uint8_t idx)
@@ -94,12 +177,9 @@ public:
 		}
 		return out_desc;
 	}
-
+#endif
 protected:
 	
-	typedef std::shared_ptr<Device_descriptor> Device_desc_ptr;
-	typedef std::shared_ptr<const Device_descriptor> Device_desc_const_ptr;
-
 	Device_desc_ptr m_dev_desc;
 
 	Config_desc_table m_config_table;

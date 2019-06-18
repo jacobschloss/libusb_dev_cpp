@@ -7,22 +7,45 @@
 
 #pragma once
 
-#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+// #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-class Endpoint_descriptor : public Descriptor_base
+// class Endpoint_descriptor : public Descriptor_base
+class Endpoint_descriptor
 {
 public:
+
+	enum class ATTRIBUTE_TRANSFER
+	{
+		CONTROL     = 0x00,
+		ISOCHRONOUS = 0x01,
+		BULK        = 0x02,
+		INTERRUPT   = 0x03
+	};
+
+	enum class ATTRIBUTE_SYNCHRONIZATION_TYPE
+	{
+		NONE         = 0x00,
+		ASYNCHRONOUS = 0x01,
+		ADAPTIVE     = 0x02,
+		SYNCHRONOUS  = 0x03
+	};
+
+	enum class ATTRIBUTE_USAGE_TYPE
+	{
+		DATA              = 0x00,
+		FEEDBACK          = 0x01,
+		EXPLICIT_FEEDBACK = 0x02
+	};
 
 	typedef std::array<uint8_t, 7> Endpoint_descriptor_array;
 
 	bool serialize(Endpoint_descriptor_array* const out_array);
 	bool deserialize(const Endpoint_descriptor_array& array);
 
-protected:
 	static constexpr uint8_t bLength = 7;
 	static constexpr uint8_t bDescriptorType = 0x05;
 	uint8_t bEndpointAddress;

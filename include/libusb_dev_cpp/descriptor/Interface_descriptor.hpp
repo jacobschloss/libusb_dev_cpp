@@ -7,13 +7,14 @@
 
 #pragma once
 
-#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+// #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-class Interface_descriptor : public Descriptor_base
+// class Interface_descriptor : public Descriptor_base
+class Interface_descriptor
 {
 public:
 
@@ -22,7 +23,6 @@ public:
 	bool serialize(Interface_descriptor_array* const out_array);
 	bool deserialize(const Interface_descriptor_array& array);
 
-protected:
 	static constexpr uint8_t bLength = 9;
 	static constexpr uint8_t bDescriptorType = 0x04;
 	uint8_t bInterfaceNumber;
