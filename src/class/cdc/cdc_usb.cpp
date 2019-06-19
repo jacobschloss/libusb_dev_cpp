@@ -32,17 +32,17 @@ bool CDC_usb::fill_descriptors()
 		return false;
 	}
 
-	Configuration_descriptor conf_desc;
-	conf_desc.wTotalLength        = Configuration_descriptor::bLength;
-	conf_desc.bNumInterfaces      = 2;
-	conf_desc.bConfigurationValue = 1;
-	conf_desc.iConfiguration      = 0;
-	conf_desc.bmAttributes        = 0;
-	conf_desc.bMaxPower           = Configuration_descriptor::ma_to_maxpower(150);
-	if(!conf_desc.serialize(&conf_desc_array))
-	{
-		return false;
-	}
+	// Configuration_descriptor conf_desc;
+	// conf_desc.wTotalLength        = Configuration_descriptor::bLength;
+	// conf_desc.bNumInterfaces      = 2;
+	// conf_desc.bConfigurationValue = 1;
+	// conf_desc.iConfiguration      = 0;
+	// conf_desc.bmAttributes        = 0;
+	// conf_desc.bMaxPower           = Configuration_descriptor::ma_to_maxpower(150);
+	// if(!conf_desc.serialize(&conf_desc_array))
+	// {
+	// 	return false;
+	// }
 
 	Interface_descriptor iface_desc;
 	if(!iface_desc.serialize(&iface_desc_array))

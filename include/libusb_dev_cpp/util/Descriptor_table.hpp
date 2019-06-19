@@ -32,7 +32,12 @@ public:
 		return m_dev_desc;
 	}
 
-	void set_config_descriptor(const Configuration_descriptor& desc, const uint8_t idx)
+	// void set_config_descriptor(const Configuration_descriptor& desc, const uint8_t idx)
+	// {
+	// 	m_config_table.set_config(idx, desc);
+	// }
+
+	void set_config_descriptor(const Config_desc_table::Config_desc_ptr& desc, const uint8_t idx)
 	{
 		m_config_table.set_config(idx, desc);
 	}
@@ -47,6 +52,11 @@ public:
 		m_iface_table.set_config(idx, desc);
 	}
 
+	Iface_desc_table::Iface_desc_ptr get_interface_descriptor(const uint8_t idx)
+	{
+		return m_iface_table.get_config(idx);
+	}
+
 	Iface_desc_table::Iface_desc_const_ptr get_interface_descriptor(const uint8_t idx) const
 	{
 		return m_iface_table.get_config(idx);
@@ -55,6 +65,11 @@ public:
 	void set_endpoint_descriptor(const Endpoint_descriptor& desc, const uint8_t idx)
 	{
 		m_endpoint_table.set_config(idx, desc);
+	}
+
+	Endpoint_desc_table::Endpoint_desc_ptr get_endpoint_descriptor(const uint8_t idx)
+	{
+		return m_endpoint_table.get_config(idx);
 	}
 
 	Endpoint_desc_table::Endpoint_desc_const_ptr get_endpoint_descriptor(const uint8_t idx) const

@@ -23,7 +23,7 @@ USB_core::~USB_core()
 	
 }
 
-bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size, const buffer_adapter& tx_buf, const buffer_adapter& rx_buf)
+bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter& tx_buf, const Buffer_adapter& rx_buf)
 {
 	m_address = 0;
 
@@ -618,7 +618,6 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 						break;
 					}
 
-
 					Configuration_descriptor::Configuration_descriptor_array desc_arr;
 					if(!config_desc->serialize(&desc_arr))
 					{
@@ -627,14 +626,51 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 					}
 
 					m_tx_buffer.reset();
-					std::copy_n(desc_arr.data(), desc_arr.size(), m_tx_buffer.buf_ptr);
-					m_tx_buffer.rem_len = desc_arr.size();
 
 					//truncate if needed
-					if(req->setup_packet.wLength < m_tx_buffer.rem_len)
+					m_tx_buffer.insert(desc_arr.data(), std::min<size_t>(req->setup_packet.wLength, desc_arr.size()));
+
+					#if 0
+					//send iface and ep descriptors
+					if(req->setup_packet.wLength == config_desc->bLength)
 					{
-						m_tx_buffer.rem_len = req->setup_packet.wLength;
+						{
+							Interface_descriptor::Interface_descriptor_array desc_arr;
+							Interface_descriptor const * node = config_desc->get_iface_desc_list().front<Interface_descriptor>();
+
+							while(node)
+							{
+								if(!node->serialize(&desc_arr))
+								{
+									r = USB_common::USB_RESP::FAIL;
+									break;
+								}
+
+								m_tx_buffer.insert(desc_arr.data(), desc_arr.size());
+
+								node->next<Interface_descriptor>();
+							}
+						}
+
+						{
+							Endpoint_descriptor::Endpoint_descriptor_array desc_arr;
+							Endpoint_descriptor const * node = config_desc->get_ep_desc_list().front<Endpoint_descriptor>();
+
+							while(node)
+							{
+								if(!node->serialize(&desc_arr))
+								{
+									r = USB_common::USB_RESP::FAIL;
+									break;
+								}
+
+								m_tx_buffer.insert(desc_arr.data(), desc_arr.size());
+
+								node->next<Endpoint_descriptor>();
+							}
+						}
 					}
+					#endif
 
 					r = USB_common::USB_RESP::ACK;
 					break;

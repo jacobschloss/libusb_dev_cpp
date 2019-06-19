@@ -5,53 +5,11 @@
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
 #include "libusb_dev_cpp/util/Descriptor_table.hpp"
+#include "libusb_dev_cpp/util/Buffer_adapter.hpp"
 
 class USB_core
 {
 public:
-
-	class buffer_adapter
-	{
-	public:
-		buffer_adapter()
-		{
-			clear();
-		}
-
-		void clear()
-		{
-			buf_ptr     = nullptr;
-			buf_maxsize = 0;
-			curr_ptr    = nullptr;
-			rem_len     = 0;
-		}
-
-		void reset()
-		{
-			curr_ptr    = buf_ptr;
-			rem_len     = 0;	
-		}
-
-		void reset(uint8_t* const buf, const size_t maxlen)
-		{
-			buf_ptr     = buf;
-			buf_maxsize = maxlen;
-			curr_ptr    = buf;
-			rem_len     = 0;	
-		}
-
-		//start of buffer
-		uint8_t* buf_ptr;
-
-		//max length
-		size_t   buf_maxsize;
-
-		//current position in buffer
-		uint8_t* curr_ptr;
-
-		//remaining length
-		size_t   rem_len;
-	};
 
 	enum class USB_CMD
 	{
@@ -69,7 +27,7 @@ public:
 	USB_core(const USB_core& rhs) = delete;
 	USB_core& operator=(const USB_core& rhs) = delete;
 
-	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const buffer_adapter& tx_buf, const buffer_adapter& rx_buf);
+	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter& tx_buf, const Buffer_adapter& rx_buf);
 	void set_descriptor_table(Descriptor_table* const desc_table);
 	bool poll();
 
@@ -112,8 +70,8 @@ protected:
 
 	void set_address(const uint8_t addr);
 
-	buffer_adapter m_rx_buffer;
-	buffer_adapter m_tx_buffer;
+	Buffer_adapter m_rx_buffer;
+	Buffer_adapter m_tx_buffer;
 /*
 	enum class USB_DEVICE_STATE
 	{

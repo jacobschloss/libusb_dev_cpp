@@ -7,14 +7,13 @@
 
 #pragma once
 
-// #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+#include "freertos_cpp_util/util/Intrusive_list.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-// class Interface_descriptor : public Descriptor_base
-class Interface_descriptor
+class Interface_descriptor : public Intrusive_list_node
 {
 public:
 

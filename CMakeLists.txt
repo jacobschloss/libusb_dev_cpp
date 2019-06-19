@@ -22,6 +22,7 @@ add_library(usb_dev_cpp
 	src/core/Request_type.cpp
 	src/core/Get_descriptor.cpp
 
+	src/util/Buffer_adapter.cpp
 	src/util/Desc_table_base.cpp
 	src/util/Config_desc_table.cpp
 	src/util/Iface_desc_table.cpp

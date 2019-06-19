@@ -7,16 +7,23 @@
 
 #pragma once
 
-// #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+#include "freertos_cpp_util/util/Intrusive_list.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-// class Configuration_descriptor : public Descriptor_base
 class Configuration_descriptor
 {
 public:
+
+	Configuration_descriptor()
+	{
+		
+	}
+
+	Configuration_descriptor(const Configuration_descriptor& rhs) = delete;
+	Configuration_descriptor& operator=(const Configuration_descriptor& rhs) = delete;
 
 	enum class ATTRIBUTES
 	{
@@ -43,4 +50,26 @@ public:
 	uint8_t iConfiguration;
 	uint8_t bmAttributes;
 	uint8_t bMaxPower;
+
+	Intrusive_list& get_iface_desc_list()
+	{
+		return m_iface_desc_list;
+	}
+	Intrusive_list& get_ep_desc_list()
+	{
+		return m_ep_desc_list;
+	}
+
+	const Intrusive_list& get_iface_desc_list() const
+	{
+		return m_iface_desc_list;
+	}
+	const Intrusive_list& get_ep_desc_list() const
+	{
+		return m_ep_desc_list;
+	}
+
+protected:
+	Intrusive_list m_iface_desc_list;
+	Intrusive_list m_ep_desc_list;
 };
