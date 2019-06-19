@@ -7,7 +7,7 @@
 
 #include "libusb_dev_cpp/descriptor/Interface_descriptor.hpp"
 
-bool Interface_descriptor::serialize(Interface_descriptor_array* const out_array)
+bool Interface_descriptor::serialize(Interface_descriptor_array* const out_array) const
 {
 	(*out_array)[0] = bLength;
 	(*out_array)[1] = bDescriptorType;

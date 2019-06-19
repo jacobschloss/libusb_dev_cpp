@@ -12,5 +12,5 @@ public:
 	using String_desc_const_ptr = Desc_const_ptr;
 
 private:
-
+	// std::map<uint16_t, std::map<uint8_t, String_descriptor_n> > m_map;
 };

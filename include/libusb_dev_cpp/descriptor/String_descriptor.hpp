@@ -13,8 +13,19 @@
 
 #include <cstdint>
 
+template<size_t LEN>
+class String_descriptor_base
+{
+public:
+
+protected:
+	
+	static constexpr uint8_t bDescriptorType = 0x03;
+	std::array<uint16_t, LEN> m_buf;
+};
+
 template<size_t NUM_LANG>
-class String_descriptor_zero
+class String_descriptor_zero : public String_descriptor_base<NUM_LANG>
 {
 public:
 
@@ -23,25 +34,19 @@ public:
 	bool serialize(String_descriptor_zero_array* const out_array)
 	{
 		(*out_array)[0] = bLength;
-		(*out_array)[1] = bDescriptorType;
+		(*out_array)[1] = String_descriptor_base<NUM_LANG>::bDescriptorType;
 
 		for(size_t i = 0; i < NUM_LANG; i++)
 		{
-			(*out_array)[2+2*i]   = Byte_util::get_b0(wLANGID[i]);
-			(*out_array)[2+2*i+1] = Byte_util::get_b1(wLANGID[i]);
+			(*out_array)[2+2*i]   = Byte_util::get_b0(String_descriptor_base<NUM_LANG>::m_buf[i]);
+			(*out_array)[2+2*i+1] = Byte_util::get_b1(String_descriptor_base<NUM_LANG>::m_buf[i]);
 		}
 
 		return true;
 	}
-	//bool deserialize(const String_descriptor_zero_array& array)
-	//{
-	//	
-	//}
 
 protected:
 	static constexpr uint8_t bLength = 2 + NUM_LANG*2;
-	static constexpr uint8_t bDescriptorType = 0x03;
-	std::array<uint16_t, NUM_LANG> wLANGID;
 };
 
 class String_descriptor_zero_enus : public String_descriptor_zero<1>
@@ -50,12 +55,12 @@ public:
 
 	String_descriptor_zero_enus()
 	{
-		wLANGID[0] = 0x0409;
+		m_buf[0] = 0x0409;
 	}
 };
 
 template<size_t STRLEN>
-class String_descriptor_n
+class String_descriptor_n : public String_descriptor_base<STRLEN>
 {
 public:
 	//USB uses UTF-16-LE, so strings can only be this long
@@ -77,7 +82,7 @@ public:
 				break;
 			}
 
-			bString[i] = ascii_to_utf16le(msg[i]);
+			String_descriptor_base<STRLEN>::m_buf[i] = ascii_to_utf16le(msg[i]);
 		}
 
 		bLength = STRLEN+2;
@@ -98,21 +103,16 @@ public:
 		}
 
 		(*out_array)[0] = bLength;
-		(*out_array)[1] = bDescriptorType;
+		(*out_array)[1] = String_descriptor_base<STRLEN>::bDescriptorType;
 
 		for(size_t i = 0; i < (bLength - 2); i++)
 		{
-			(*out_array)[2+2*i]   = Byte_util::get_b0(bString[i]);
-			(*out_array)[2+2*i+1] = Byte_util::get_b1(bString[i]);
+			(*out_array)[2+2*i]   = Byte_util::get_b0(String_descriptor_base<STRLEN>::m_buf[i]);
+			(*out_array)[2+2*i+1] = Byte_util::get_b1(String_descriptor_base<STRLEN>::m_buf[i]);
 		}
 
 		return true;
 	}
-	// bool deserialize(const String_descriptor_array& array)
-	// {
-	// 
-	// }
-
 
 protected:
 
@@ -122,6 +122,4 @@ protected:
 	}
 
 	uint8_t bLength;
-	static constexpr uint8_t bDescriptorType = 0x03;
-	std::array<uint16_t, STRLEN> bString;
 };

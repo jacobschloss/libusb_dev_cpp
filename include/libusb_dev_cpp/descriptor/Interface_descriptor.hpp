@@ -20,7 +20,7 @@ public:
 
 	typedef std::array<uint8_t, 9> Interface_descriptor_array;
 
-	bool serialize(Interface_descriptor_array* const out_array);
+	bool serialize(Interface_descriptor_array* const out_array) const;
 	bool deserialize(const Interface_descriptor_array& array);
 
 	static constexpr uint8_t bLength = 9;

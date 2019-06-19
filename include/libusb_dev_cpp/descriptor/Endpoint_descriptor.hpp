@@ -43,7 +43,7 @@ public:
 
 	typedef std::array<uint8_t, 7> Endpoint_descriptor_array;
 
-	bool serialize(Endpoint_descriptor_array* const out_array);
+	bool serialize(Endpoint_descriptor_array* const out_array) const;
 	bool deserialize(const Endpoint_descriptor_array& array);
 
 	static constexpr uint8_t bLength = 7;

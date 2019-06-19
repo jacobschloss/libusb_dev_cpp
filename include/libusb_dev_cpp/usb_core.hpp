@@ -4,6 +4,8 @@
 
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
+#include "libusb_dev_cpp/util/Descriptor_table.hpp"
+
 class USB_core
 {
 public:
@@ -68,6 +70,7 @@ public:
 	USB_core& operator=(const USB_core& rhs) = delete;
 
 	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const buffer_adapter& tx_buf, const buffer_adapter& rx_buf);
+	void set_descriptor_table(Descriptor_table* const desc_table);
 	bool poll();
 
 	bool enable();
@@ -147,4 +150,6 @@ protected:
 	Control_request m_ctrl_req;
 
 	uint8_t m_address;
+
+	Descriptor_table* m_desc_table;
 };

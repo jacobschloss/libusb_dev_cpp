@@ -27,7 +27,7 @@ public:
 
 	typedef std::array<uint8_t, 18> Configuration_descriptor_array;
 
-	bool serialize(Configuration_descriptor_array* const out_array);
+	bool serialize(Configuration_descriptor_array* const out_array) const;
 	bool deserialize(const Configuration_descriptor_array& array);
 
 	static constexpr uint8_t ma_to_maxpower(const uint8_t ma)

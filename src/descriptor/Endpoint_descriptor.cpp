@@ -9,7 +9,7 @@
 
 #include "common_util/Byte_util.hpp"
 
-bool Endpoint_descriptor::serialize(Endpoint_descriptor_array* const out_array)
+bool Endpoint_descriptor::serialize(Endpoint_descriptor_array* const out_array) const
 {
 	(*out_array)[0] = bLength;
 	(*out_array)[1] = bDescriptorType;

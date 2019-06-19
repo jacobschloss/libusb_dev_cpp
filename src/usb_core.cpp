@@ -15,6 +15,7 @@
 USB_core::USB_core()
 {
 	m_driver = nullptr;
+	m_desc_table = nullptr;
 }
 
 USB_core::~USB_core()
@@ -34,6 +35,11 @@ bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size, 
 	m_rx_buffer.reset();
 
 	return true;
+}
+
+void USB_core::set_descriptor_table(Descriptor_table* const desc_table)
+{
+	m_desc_table = desc_table;
 }
 
 bool USB_core::poll()
@@ -576,22 +582,15 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 			{
 				case USB_common::DESCRIPTOR_TYPE::DEVICE:
 				{
-					Device_descriptor dev_desc;
-					dev_desc.bcdUSB = Device_descriptor::build_bcd(2, 0, 0);
-					dev_desc.bDeviceClass    = 0;
-					dev_desc.bDeviceSubClass = 0;
-					dev_desc.bDeviceProtocol = 0;
-					dev_desc.bMaxPacketSize0 = m_driver->get_ep0_config().size;
-					dev_desc.idVendor  = 0x0123;
-					dev_desc.idProduct = 0x4567;
-					dev_desc.bcdDevice = Device_descriptor::build_bcd(1, 0, 0);
-					dev_desc.iManufacturer      = 0;
-					dev_desc.iProduct           = 0;
-					dev_desc.iSerialNumber      = 0;
-					dev_desc.bNumConfigurations = 1;
+					Descriptor_table::Device_desc_const_ptr dev_desc = m_desc_table->get_device_descriptor(desc_index);
+					if(!dev_desc)
+					{
+						r = USB_common::USB_RESP::FAIL;
+						break;
+					}
 
 					Device_descriptor::Device_descriptor_array desc_arr;
-					if(!dev_desc.serialize(&desc_arr))
+					if(!dev_desc->serialize(&desc_arr))
 					{
 						r = USB_common::USB_RESP::FAIL;
 						break;
@@ -612,16 +611,16 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 				}
 				case USB_common::DESCRIPTOR_TYPE::CONFIGURATION:
 				{
-					Configuration_descriptor config_desc;
-					config_desc.wTotalLength = 9;
-					config_desc.bNumInterfaces = 0;
-					config_desc.bConfigurationValue = 0;
-					config_desc.iConfiguration = 0;
-					config_desc.bmAttributes = 0;
-					config_desc.bMaxPower = Configuration_descriptor::ma_to_maxpower(150);
+					Config_desc_table::Config_desc_const_ptr config_desc = m_desc_table->get_config_descriptor(desc_index);
+					if(!config_desc)
+					{
+						r = USB_common::USB_RESP::FAIL;
+						break;
+					}
+
 
 					Configuration_descriptor::Configuration_descriptor_array desc_arr;
-					if(!config_desc.serialize(&desc_arr))
+					if(!config_desc->serialize(&desc_arr))
 					{
 						r = USB_common::USB_RESP::FAIL;
 						break;

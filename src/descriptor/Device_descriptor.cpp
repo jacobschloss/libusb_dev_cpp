@@ -9,7 +9,7 @@
 
 #include "common_util/Byte_util.hpp"
 
-bool Device_descriptor::serialize(Device_descriptor_array* const out_array)
+bool Device_descriptor::serialize(Device_descriptor_array* const out_array) const
 {
 	(*out_array)[0]  = bLength;
 	(*out_array)[1]  = bDescriptorType;

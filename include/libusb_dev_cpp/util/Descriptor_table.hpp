@@ -27,17 +27,17 @@ public:
 		return true;
 	}
 
-	Device_desc_const_ptr get_device_descriptor(const uint8_t idx)
+	Device_desc_const_ptr get_device_descriptor(const uint8_t idx) const
 	{
 		return m_dev_desc;
 	}
 
-	void set_configuration_descriptor(const Configuration_descriptor& desc, const uint8_t idx)
+	void set_config_descriptor(const Configuration_descriptor& desc, const uint8_t idx)
 	{
 		m_config_table.set_config(idx, desc);
 	}
 
-	Config_desc_table::Config_desc_const_ptr get_configuration_descriptor(const uint8_t idx)
+	Config_desc_table::Config_desc_const_ptr get_config_descriptor(const uint8_t idx) const
 	{
 		return m_config_table.get_config(idx);
 	}
@@ -47,7 +47,7 @@ public:
 		m_iface_table.set_config(idx, desc);
 	}
 
-	Iface_desc_table::Iface_desc_const_ptr get_interface_descriptor(const uint8_t idx)
+	Iface_desc_table::Iface_desc_const_ptr get_interface_descriptor(const uint8_t idx) const
 	{
 		return m_iface_table.get_config(idx);
 	}
@@ -57,7 +57,7 @@ public:
 		m_endpoint_table.set_config(idx, desc);
 	}
 
-	Endpoint_desc_table::Endpoint_desc_const_ptr get_endpoint_descriptor(const uint8_t idx)
+	Endpoint_desc_table::Endpoint_desc_const_ptr get_endpoint_descriptor(const uint8_t idx) const
 	{
 		return m_endpoint_table.get_config(idx);
 	}

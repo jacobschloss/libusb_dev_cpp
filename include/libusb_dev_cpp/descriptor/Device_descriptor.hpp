@@ -22,7 +22,7 @@ public:
 
 	typedef std::array<uint8_t, 18> Device_descriptor_array;
 
-	bool serialize(Device_descriptor_array* const out_array);
+	bool serialize(Device_descriptor_array* const out_array) const;
 	bool deserialize(const Device_descriptor_array& array);
 
 	static constexpr uint16_t build_bcd(const uint8_t major, const uint8_t minor, const uint8_t subminor)
