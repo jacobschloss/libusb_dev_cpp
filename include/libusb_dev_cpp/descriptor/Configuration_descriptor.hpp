@@ -19,7 +19,7 @@ public:
 
 	Configuration_descriptor()
 	{
-		
+
 	}
 
 	Configuration_descriptor(const Configuration_descriptor& rhs) = delete;
@@ -32,7 +32,7 @@ public:
 		REMOTE_WAKEUP = 0xA0
 	};
 
-	typedef std::array<uint8_t, 18> Configuration_descriptor_array;
+	typedef std::array<uint8_t, 9> Configuration_descriptor_array;
 
 	bool serialize(Configuration_descriptor_array* const out_array) const;
 	bool deserialize(const Configuration_descriptor_array& array);
@@ -55,21 +55,12 @@ public:
 	{
 		return m_iface_desc_list;
 	}
-	Intrusive_list& get_ep_desc_list()
-	{
-		return m_ep_desc_list;
-	}
 
 	const Intrusive_list& get_iface_desc_list() const
 	{
 		return m_iface_desc_list;
 	}
-	const Intrusive_list& get_ep_desc_list() const
-	{
-		return m_ep_desc_list;
-	}
 
 protected:
 	Intrusive_list m_iface_desc_list;
-	Intrusive_list m_ep_desc_list;
 };

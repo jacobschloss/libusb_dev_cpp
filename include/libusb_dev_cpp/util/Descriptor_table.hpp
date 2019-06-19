@@ -47,7 +47,12 @@ public:
 		return m_config_table.get_config(idx);
 	}
 
-	void set_interface_descriptor(const Interface_descriptor& desc, const uint8_t idx)
+	// void set_interface_descriptor(const Interface_descriptor& desc, const uint8_t idx)
+	// {
+	// 	m_iface_table.set_config(idx, desc);
+	// }
+
+	void set_interface_descriptor(const Iface_desc_table::Iface_desc_ptr& desc, const uint8_t idx)
 	{
 		m_iface_table.set_config(idx, desc);
 	}
