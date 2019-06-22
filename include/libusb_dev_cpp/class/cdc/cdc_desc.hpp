@@ -48,7 +48,7 @@ public:
 class CDC_acm_descriptor : public Descriptor_base
 {
 public:
-	typedef std::array<uint8_t, 5> CDC_acm_descriptor_array;
+	typedef std::array<uint8_t, 4> CDC_acm_descriptor_array;
 
 	bool serialize(CDC_acm_descriptor_array* const out_array) const;
 	bool serialize(Buffer_adapter* const out_array) const override;
