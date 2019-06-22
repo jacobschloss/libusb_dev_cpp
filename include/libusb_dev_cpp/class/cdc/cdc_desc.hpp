@@ -6,6 +6,8 @@
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
+#include <tuple>
+
 class CDC_header_descriptor : public Descriptor_base
 {
 public:
@@ -23,6 +25,8 @@ public:
 	constexpr static uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CLASS_SPECIFIC_INTERFACE);
 	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::HEADER);
 	uint16_t bcdCDC;
+
+	static_assert(std::tuple_size<CDC_header_descriptor_array>::value == bFunctionLength);
 };
 
 class CDC_call_management_descriptor : public Descriptor_base
@@ -43,6 +47,8 @@ public:
 	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::CALL_MGMT);
 	uint8_t bmCapabilities;
 	uint8_t bDataInterface;
+
+	static_assert(std::tuple_size<CDC_call_management_descriptor_array>::value == bFunctionLength);
 };
 
 class CDC_acm_descriptor : public Descriptor_base
@@ -61,7 +67,9 @@ public:
 	constexpr static uint8_t bFunctionLength = 4;
 	constexpr static uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CLASS_SPECIFIC_INTERFACE);
 	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::ACM);
-	uint8_t bmCapabilities;	
+	uint8_t bmCapabilities;
+
+	static_assert(std::tuple_size<CDC_acm_descriptor_array>::value == bFunctionLength);
 };
 
 class CDC_union_descriptor : public Descriptor_base
@@ -82,6 +90,8 @@ public:
 	constexpr static uint8_t bDescriptorSubtype = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::UNION);
 	uint8_t bMasterInterface;
 	uint8_t bSlaveInterface0;
+
+	static_assert(std::tuple_size<CDC_union_descriptor_array>::value == bFunctionLength);
 };
 
 template<size_t DATALEN>
