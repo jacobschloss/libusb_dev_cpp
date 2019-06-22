@@ -23,6 +23,23 @@ bool Configuration_descriptor::serialize(Configuration_descriptor_array* const o
 
 	return true;
 }
+bool Configuration_descriptor::serialize(Buffer_adapter* const out_array) const
+{
+	if(out_array->capacity() < size())
+	{
+		return false;
+	}
+
+	Configuration_descriptor_array temp;
+	if(!serialize(&temp))
+	{
+		return false;
+	}
+
+	out_array->insert(temp.data(), temp.size());
+
+	return true;
+}
 bool Configuration_descriptor::deserialize(const Configuration_descriptor_array& array)
 {
 	if(bLength != array[0])

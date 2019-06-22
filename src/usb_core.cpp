@@ -26,6 +26,7 @@ USB_core::~USB_core()
 bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter& tx_buf, const Buffer_adapter& rx_buf)
 {
 	m_address = 0;
+	m_configuration = 0;
 
 	m_driver = driver;
 
@@ -79,7 +80,7 @@ bool USB_core::handle_reset()
 	m_setup_complete_callback = nullptr;
 
 	usb_driver_base::ep_cfg ep0;
-	ep0.num  = 0;
+	ep0.num = 0;
 	if(m_driver->get_speed() == USB_common::USB_SPEED::LS)
 	{
 		ep0.size = 8;
@@ -457,7 +458,7 @@ USB_common::USB_RESP USB_core::process_request(Control_request* const req)
 	{
 		case Request_type::TYPE::STANDARD:
 		{	
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "STANDARD request");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "STANDARD request");
 			switch(request_type.recipient)
 			{
 				case Request_type::RECIPIENT::DEVICE:
@@ -485,19 +486,19 @@ USB_common::USB_RESP USB_core::process_request(Control_request* const req)
 		}
 		case Request_type::TYPE::CLASS:
 		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "CLASS request");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "CLASS request");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
 		case Request_type::TYPE::VENDOR:
 		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "VENDOR request");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "VENDOR request");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
 		case Request_type::TYPE::RESERVED:
 		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "RESERVED request");
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "RESERVED request");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
@@ -613,73 +614,40 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 						break;
 					}
 
-					Configuration_descriptor::Configuration_descriptor_array desc_arr;
-					if(!config_desc->serialize(&desc_arr))
+					m_tx_buffer.reset();
+
+					if(!config_desc->serialize(&m_tx_buffer))
 					{
 						r = USB_common::USB_RESP::FAIL;
 						break;
 					}
 
-					m_tx_buffer.reset();
-
-					//truncate if needed
-					m_tx_buffer.insert(desc_arr.data(), std::min<size_t>(req->setup_packet.wLength, desc_arr.size()));
-
-					for(size_t i = 0; i < desc_arr.size(); i++)
+					for(size_t i = 0; i < config_desc->size(); i++)
 					{
-						uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - 0x%02X", desc_arr[i]);
+						uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - 0x%02X", m_tx_buffer.buf_ptr[i]);
 					}
 
 					//send iface and ep descriptors if asked for more
 					if(req->setup_packet.wLength > config_desc->bLength)
-					{
-						
-						Interface_descriptor::Interface_descriptor_array desc_arr;
-						Interface_descriptor const * if_node = config_desc->get_iface_desc_list().front<Interface_descriptor>();
+					{					
+						Descriptor_base const * desc_node = config_desc->get_desc_list().front<Descriptor_base>();
 
-						while(if_node)
+						while(desc_node)
 						{
-							uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - iface");
+							uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - node");
 
 							if(m_tx_buffer.size() == req->setup_packet.wLength)
 							{
 								break;
 							}
 
-							if(!if_node->serialize(&desc_arr))
+							if(!desc_node->serialize(&m_tx_buffer))
 							{
 								r = USB_common::USB_RESP::FAIL;
 								break;
 							}
 
-							m_tx_buffer.insert(desc_arr.data(), std::min(desc_arr.size(), req->setup_packet.wLength - m_tx_buffer.size()));
-
-							{
-								Endpoint_descriptor::Endpoint_descriptor_array desc_arr;
-								Endpoint_descriptor const * ep_node = if_node->get_ep_desc_list().front<Endpoint_descriptor>();
-
-								while(ep_node)
-								{
-									uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - ep");
-
-									if(m_tx_buffer.size() == req->setup_packet.wLength)
-									{
-										break;
-									}
-
-									if(!ep_node->serialize(&desc_arr))
-									{
-										r = USB_common::USB_RESP::FAIL;
-										break;
-									}
-
-									m_tx_buffer.insert(desc_arr.data(), std::min(desc_arr.size(), req->setup_packet.wLength - m_tx_buffer.size()));
-
-									ep_node = ep_node->next<Endpoint_descriptor>();
-								}
-							}
-
-							if_node = if_node->next<Interface_descriptor>();
+							desc_node = desc_node->next<Descriptor_base>();
 						}
 					}
 
@@ -718,15 +686,15 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Control_request* const 
 				break;
 			}
 
-			if(!get_configuration(&(req->data_stage_buffer[0])))
+			uint8_t temp = 0;
+			if(!get_configuration(&temp))
 			{
-				r = USB_common::USB_RESP::FAIL;		
-			}
-			else
-			{
-				r = USB_common::USB_RESP::ACK;
+				r = USB_common::USB_RESP::FAIL;
+				break;
 			}
 
+			m_tx_buffer.insert(&temp, 1);
+			r = USB_common::USB_RESP::ACK;
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_CONFIGURATION:
@@ -836,11 +804,28 @@ bool USB_core::set_configuration(const uint8_t bConfigurationValue)
 		return false;
 	}
 
+	m_configuration = bConfigurationValue;
+
+	//TODO move this to a child or callback
+	{
+		usb_driver_base::ep_cfg ep1;
+		ep1.num = 0x01;
+		ep1.size = 512;
+		ep1.type = usb_driver_base::EP_TYPE::BULK;
+		m_driver->ep_config(ep1);
+	}
+	{
+		usb_driver_base::ep_cfg ep2;
+		ep2.num = 0x80 | 0x02;
+		ep2.size = 512;
+		ep2.type = usb_driver_base::EP_TYPE::BULK;
+		m_driver->ep_config(ep2);
+	}
 	return true;
 }
 bool USB_core::get_configuration(uint8_t* const bConfigurationValue)
 {
-	*bConfigurationValue = 0;
+	*bConfigurationValue = m_configuration;
 	return true;
 }
 

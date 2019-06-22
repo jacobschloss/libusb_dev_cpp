@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "freertos_cpp_util/util/Intrusive_list.hpp"
+#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-class Configuration_descriptor
+class Configuration_descriptor : public Descriptor_base
 {
 public:
 
@@ -35,7 +35,14 @@ public:
 	typedef std::array<uint8_t, 9> Configuration_descriptor_array;
 
 	bool serialize(Configuration_descriptor_array* const out_array) const;
+	bool serialize(Buffer_adapter* const out_array) const override;
+
 	bool deserialize(const Configuration_descriptor_array& array);
+
+	size_t size() const override
+	{
+		return bLength;
+	}
 
 	static constexpr uint8_t ma_to_maxpower(const uint8_t ma)
 	{
@@ -51,16 +58,31 @@ public:
 	uint8_t bmAttributes;
 	uint8_t bMaxPower;
 
-	Intrusive_list& get_iface_desc_list()
+	size_t get_total_size() const
 	{
-		return m_iface_desc_list;
+		size_t total_size = size();
+		
+		Descriptor_base const * desc_node = get_desc_list().front<Descriptor_base>();
+		while(desc_node)
+		{
+			total_size += desc_node->size();
+
+			desc_node = desc_node->next<Descriptor_base>();
+		}
+
+		return total_size;
 	}
 
-	const Intrusive_list& get_iface_desc_list() const
+	Intrusive_list& get_desc_list()
 	{
-		return m_iface_desc_list;
+		return m_desc_list;
+	}
+
+	const Intrusive_list& get_desc_list() const
+	{
+		return m_desc_list;
 	}
 
 protected:
-	Intrusive_list m_iface_desc_list;
+	Intrusive_list m_desc_list;
 };

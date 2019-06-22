@@ -21,6 +21,23 @@ bool Interface_descriptor::serialize(Interface_descriptor_array* const out_array
 
 	return true;
 }
+bool Interface_descriptor::serialize(Buffer_adapter* const out_array) const
+{
+	if(out_array->capacity() < size())
+	{
+		return false;
+	}
+
+	Interface_descriptor_array temp;
+	if(!serialize(&temp))
+	{
+		return false;
+	}
+
+	out_array->insert(temp.data(), temp.size());
+
+	return true;
+}
 bool Interface_descriptor::deserialize(const Interface_descriptor_array& array)
 {
 	if(bLength != array[0])

@@ -7,7 +7,7 @@
 
 #pragma once
 
-// #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include "common_util/Byte_util.hpp"
 
@@ -15,20 +15,19 @@
 
 #include <cstdint>
 
-// class Device_descriptor : public Descriptor_base
-class Device_descriptor
+class Device_descriptor : public Descriptor_base
 {
 public:
 
 	typedef std::array<uint8_t, 18> Device_descriptor_array;
 
 	bool serialize(Device_descriptor_array* const out_array) const;
+	bool serialize(Buffer_adapter* const out_array) const override;
 	bool deserialize(const Device_descriptor_array& array);
 
-	static constexpr uint16_t build_bcd(const uint8_t major, const uint8_t minor, const uint8_t subminor)
+	size_t size() const override
 	{
-		//0xJJMN
-		return Byte_util::make_u16(major, ((minor & 0x0F) << 4) | (subminor & 0x0F));
+		return bLength;
 	}
 
 	static constexpr uint8_t bLength = 18;

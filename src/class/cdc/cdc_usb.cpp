@@ -15,14 +15,14 @@ CDC_usb::~CDC_usb()
 bool CDC_usb::fill_descriptors()
 {
 	Device_descriptor dev_desc;
-	dev_desc.bcdUSB = Device_descriptor::build_bcd(2, 0, 0);
+	dev_desc.bcdUSB = USB_common::build_bcd(2, 0, 0);
 	dev_desc.bDeviceClass    = 0;
 	dev_desc.bDeviceSubClass = 0;
 	dev_desc.bDeviceProtocol = 0;
 	dev_desc.bMaxPacketSize0 = 8;
 	dev_desc.idVendor  = 0x0123;
 	dev_desc.idProduct = 0x4567;
-	dev_desc.bcdDevice = Device_descriptor::build_bcd(1, 0, 0);
+	dev_desc.bcdDevice = USB_common::build_bcd(1, 0, 0);
 	dev_desc.iManufacturer      = 0;
 	dev_desc.iProduct           = 0;
 	dev_desc.iSerialNumber      = 0;

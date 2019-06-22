@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "freertos_cpp_util/util/Intrusive_list.hpp"
+#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-class Endpoint_descriptor : public Intrusive_list_node
+class Endpoint_descriptor : public Descriptor_base
 {
 public:
 
@@ -43,7 +43,13 @@ public:
 	typedef std::array<uint8_t, 7> Endpoint_descriptor_array;
 
 	bool serialize(Endpoint_descriptor_array* const out_array) const;
+	bool serialize(Buffer_adapter* const out_array) const override;
 	bool deserialize(const Endpoint_descriptor_array& array);
+
+	size_t size() const override
+	{
+		return bLength;
+	}
 
 	static constexpr uint8_t bLength = 7;
 	static constexpr uint8_t bDescriptorType = 0x05;

@@ -21,6 +21,23 @@ bool Endpoint_descriptor::serialize(Endpoint_descriptor_array* const out_array) 
 
 	return true;
 }
+bool Endpoint_descriptor::serialize(Buffer_adapter* const out_array) const
+{
+	if(out_array->capacity() < size())
+	{
+		return false;
+	}
+
+	Endpoint_descriptor_array temp;
+	if(!serialize(&temp))
+	{
+		return false;
+	}
+
+	out_array->insert(temp.data(), temp.size());
+
+	return true;
+}
 bool Endpoint_descriptor::deserialize(const Endpoint_descriptor_array& array)
 {
 	if(bLength != array[0])

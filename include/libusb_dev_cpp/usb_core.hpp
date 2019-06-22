@@ -108,6 +108,7 @@ protected:
 	Control_request m_ctrl_req;
 
 	uint8_t m_address;
+	uint8_t m_configuration;
 
 	Descriptor_table* m_desc_table;
 };

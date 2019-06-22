@@ -6,6 +6,7 @@ add_library(usb_dev_cpp
 	src/descriptor/String_descriptor.cpp
 
 	src/class/cdc/cdc.cpp
+	src/class/cdc/cdc_desc.cpp
 	src/class/cdc/cdc_usb.cpp
 
 	src/class/dfu/dfu.cpp

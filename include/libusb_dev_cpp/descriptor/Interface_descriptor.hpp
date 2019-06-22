@@ -7,13 +7,13 @@
 
 #pragma once
 
-#include "freertos_cpp_util/util/Intrusive_list.hpp"
+#include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
 #include <array>
 
 #include <cstdint>
 
-class Interface_descriptor : public Intrusive_list_node
+class Interface_descriptor : public Descriptor_base
 {
 public:
 
@@ -28,7 +28,13 @@ public:
 	typedef std::array<uint8_t, 9> Interface_descriptor_array;
 
 	bool serialize(Interface_descriptor_array* const out_array) const;
+	bool serialize(Buffer_adapter* const out_array) const override;
 	bool deserialize(const Interface_descriptor_array& array);
+
+	size_t size() const override
+	{
+		return bLength;
+	}
 
 	static constexpr uint8_t bLength = 9;
 	static constexpr uint8_t bDescriptorType = 0x04;
@@ -39,16 +45,4 @@ public:
 	uint8_t bInterfaceSubClass;
 	uint8_t bInterfaceProtocol;
 	uint8_t iInterface;
-
-	Intrusive_list& get_ep_desc_list()
-	{
-		return m_ep_desc_list;
-	}
-
-	const Intrusive_list& get_ep_desc_list() const
-	{
-		return m_ep_desc_list;
-	}
-protected:
-	Intrusive_list m_ep_desc_list;
 };

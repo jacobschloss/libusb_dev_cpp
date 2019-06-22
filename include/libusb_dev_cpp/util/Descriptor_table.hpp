@@ -9,6 +9,8 @@
 #include "libusb_dev_cpp/util/String_desc_table.hpp"
 #include "libusb_dev_cpp/util/Endpoint_desc_table.hpp"
 
+//TODO: for class data, a linked list of base class things might actually work well. CDC needs to send a lot of data after the iface before the ep
+
 class Descriptor_table
 {
 public:
@@ -43,6 +45,11 @@ public:
 	}
 
 	Config_desc_table::Config_desc_const_ptr get_config_descriptor(const uint8_t idx) const
+	{
+		return m_config_table.get_config(idx);
+	}
+
+	Config_desc_table::Config_desc_ptr get_config_descriptor(const uint8_t idx)
 	{
 		return m_config_table.get_config(idx);
 	}

@@ -25,7 +25,8 @@ enum class CDC_SUBCLASS_CODE : uint8_t
 
 enum class CDC_PROTO_CODE : uint8_t
 {
-	V25TER = 0x02
+	NONE   = 0x00,
+	V25TER = 0x01
 };
 
 enum class CDC_DATA_PROTO_CODE : uint8_t
@@ -35,7 +36,7 @@ enum class CDC_DATA_PROTO_CODE : uint8_t
 	CDCSPEC = 0xFE
 };
 
-enum class DTYPE_CDC : uint8_t
+enum class DESCRIPTOR_TYPE_CDC : uint8_t
 {
 	HEADER    = 0x00,
 	CALL_MGMT = 0x01,
@@ -101,48 +102,3 @@ enum class CDC_STATE : uint16_t
 	PARITY     = 0x0020,
 	OVERRUN    = 0x0040
 };
-
-class CDC_header_descriptor
-{
-	uint8_t bFunctionLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubType;
-	uint8_t bcdCDC;
-};
-
-class CDC_call_management_descriptor
-{
-	uint8_t bFunctionLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubType;
-	uint8_t bmCapabilities;
-	uint8_t bDataInterface;
-};
-
-class CDC_acm_descriptor
-{
-	uint8_t bFunctionLength;
-	uint8_t bDescriptorType;
-	uint8_t bDescriptorSubType;
-	uint8_t bmCapabilities;	
-};
-
-template<size_t DATALEN>
-class CDC_notification
-{
-	uint16_t bmRequestType;
-	uint8_t  bNotificationType;
-	uint16_t wValue;
-	uint16_t wIndex;
-	uint16_t wLength;
-	std::array<uint8_t, DATALEN> Data;
-};
-
-class CDC_line_coding
-{
-	uint32_t dwDTERate;
-	uint8_t bCharFormat;
-	uint8_t bParityType;
-	uint8_t bDataBits;
-};
-
