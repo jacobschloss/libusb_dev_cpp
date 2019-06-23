@@ -984,11 +984,11 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					m_last_data_packet.len = BCNT;
 					ep_read(ep_num, m_last_data_packet.buf.data(), BCNT);
 
-					for(size_t i = 0; i < BCNT; i++)
-					{
-						uart1_printf<16>("%02X ", m_last_data_packet.buf[i]);
-					}
-					uart1_printf<16>("\r\n");
+					// for(size_t i = 0; i < BCNT; i++)
+					// {
+					// 	uart1_printf<16>("%02X ", m_last_data_packet.buf[i]);
+					// }
+					// uart1_printf<16>("\r\n");
 				}
 
 				break;

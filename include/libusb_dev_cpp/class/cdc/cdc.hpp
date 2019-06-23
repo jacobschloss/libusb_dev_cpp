@@ -51,11 +51,44 @@ enum class CDC_REQUESTS : uint8_t
 	GET_ENCAPSULATED_RESP  = 0x01,
 	SET_COMM_FEATURE       = 0x02,
 	GET_COMM_FEATURE       = 0x03,
+
+	SET_AUX_LINE_STATE     = 0x10,
+	SET_HOOK_STATE         = 0x11,
+	PULSE_SETUP            = 0x12,
+	SEND_PULSE             = 0x13,
+	SET_PULSE_TIME         = 0x14,
+	RING_AUX_JACK          = 0x15,
+
 	CLEAR_COMM_FEATURE     = 0x04,
 	SET_LINE_CODING        = 0x20,
 	GET_LINE_CODING        = 0x21,
 	SET_CONTROL_LINE_STATE = 0x22,
-	SEND_BREAK             = 0x23
+	SEND_BREAK             = 0x23,
+
+	SET_RINGER_PARMS       = 0x30,
+	GET_RINGER_PARMS       = 0x31,
+	SET_OPERATION_PARMS    = 0x32,
+	GET_OPERATION_PARMS    = 0x33,
+
+	SET_LINE_PARMS         = 0x34,
+	GET_LINE_PARMS         = 0x35,
+	DIAL_DIGITS            = 0x36,
+	SET_UNIT_PARAMETER     = 0x37,
+	GET_UNIT_PARAMETER     = 0x38,
+	CLEAR_UNIT_PARAMETER   = 0x39,
+	GET_PROFILE            = 0x3A,
+
+	SET_ETHERNET_MULTICAST_FILTERS               = 0x40,
+	SET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER = 0x41,
+	GET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER = 0x42,
+	SET_ETHERNET_PACKET_FILTER                   = 0x43,
+	GET_ETHERNET_STATISTIC                       = 0x44,
+
+	SET_ATM_DATA_FORMAT                          = 0x50,
+	GET_ATM_DEVICE_STATISTICS                    = 0x51,
+	SET_ATM_DEFAULT_VC                           = 0x52,
+	GET_ATM_VC_STATISTICS                        = 0x53
+
 };
 
 enum class CDC_NOTIFICATION : uint8_t

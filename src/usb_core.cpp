@@ -487,7 +487,8 @@ USB_common::USB_RESP USB_core::process_request(Control_request* const req)
 		case Request_type::TYPE::CLASS:
 		{
 			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "CLASS request");
-			r = USB_common::USB_RESP::FAIL;
+			// r = USB_common::USB_RESP::FAIL;
+			r = USB_common::USB_RESP::ACK;
 			break;
 		}
 		case Request_type::TYPE::VENDOR:
@@ -816,10 +817,17 @@ bool USB_core::set_configuration(const uint8_t bConfigurationValue)
 	}
 	{
 		usb_driver_base::ep_cfg ep2;
-		ep2.num = 0x80 | 0x02;
+		ep2.num = 0x80 | 0x01;
 		ep2.size = 512;
 		ep2.type = usb_driver_base::EP_TYPE::BULK;
 		m_driver->ep_config(ep2);
+	}
+	{
+		usb_driver_base::ep_cfg ep3;
+		ep3.num = 0x80 | 0x02;
+		ep3.size = 8;
+		ep3.type = usb_driver_base::EP_TYPE::INTERRUPT;
+		m_driver->ep_config(ep3);
 	}
 	return true;
 }
