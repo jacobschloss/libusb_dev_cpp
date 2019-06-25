@@ -20,11 +20,6 @@ public:
 		m_str = str;
 	}
 
-	enum class LANGID : uint16_t
-	{
-		ENUS = 0x0409
-	};
-
 private:
 	
 	static void ascii_to_utf16le(const uint8_t c, std::array<uint8_t, 2>* const buf)
@@ -36,4 +31,27 @@ private:
 	static constexpr uint8_t bDescriptorType = 0x03;
 	static constexpr size_t str_len_max = 126;
 	char const * m_str;
+};
+
+class String_descriptor_zero : public String_descriptor_base
+{
+public:
+	enum class LANGID : uint16_t
+	{
+		ENUS = 0x0409
+	};
+
+	bool serialize(Buffer_adapter* const out_array) const override;
+
+	size_t size() const override;
+
+	void assign(const LANGID* lang, const size_t count)
+	{
+		m_lang = lang;
+		m_size = count;
+	}
+
+private:
+	LANGID const * m_lang;
+	size_t m_size;
 };
