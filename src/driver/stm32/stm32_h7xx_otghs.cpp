@@ -272,7 +272,6 @@ bool stm32_h7xx_otghs::enable()
 					USB_OTG_GINTMSK_IEPINT   |
 					USB_OTG_GINTMSK_OEPINT
 					;
-					;
 
 	//turn on global interrupt
 	Register_util::set_bits(&OTG->GAHBCFG, USB_OTG_GAHBCFG_GINT);
