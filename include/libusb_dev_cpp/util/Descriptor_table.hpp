@@ -54,12 +54,7 @@ public:
 		return m_config_table.get_config(idx);
 	}
 
-	// void set_interface_descriptor(const Interface_descriptor& desc, const uint8_t idx)
-	// {
-	// 	m_iface_table.set_config(idx, desc);
-	// }
-
-	void set_interface_descriptor(const Iface_desc_table::Iface_desc_ptr& desc, const uint8_t idx)
+	void set_interface_descriptor(const Interface_descriptor& desc, const uint8_t idx)
 	{
 		m_iface_table.set_config(idx, desc);
 	}
@@ -87,6 +82,21 @@ public:
 	Endpoint_desc_table::Endpoint_desc_const_ptr get_endpoint_descriptor(const uint8_t idx) const
 	{
 		return m_endpoint_table.get_config(idx);
+	}
+
+	void set_string_descriptor(const String_descriptor_base& desc, const uint8_t idx)
+	{
+		m_string_table.set_config(idx, desc);
+	}
+
+	String_desc_table::String_desc_ptr get_string_descriptor(const uint8_t idx)
+	{
+		return m_string_table.get_config(idx);
+	}
+
+	String_desc_table::String_desc_const_ptr get_string_descriptor(const uint8_t idx) const
+	{
+		return m_string_table.get_config(idx);
 	}
 #if 0
 	bool set_descriptor(const Desc_base_ptr& desc, const USB_common::DESCRIPTOR_TYPE type, const uint8_t idx)

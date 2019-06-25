@@ -9,14 +9,22 @@ bool String_descriptor_base::serialize(Buffer_adapter* const out_array) const
 	out_array->insert(bDescriptorType);
 	
 	std::array<uint8_t, 2> m_char;
-	char const * m_curr = m_str;
-	while(m_curr)
+	if(m_str)
 	{
-		ascii_to_utf16le(*m_curr, &m_char);
+		for(size_t i = 0; i < str_len_max; i++)
+		{
+			const char c = m_str[i];
+			if(c)
+			{
+				ascii_to_utf16le(c, &m_char);
 
-		out_array->insert(m_char.data(), m_char.size());
-
-		m_curr++;
+				out_array->insert(m_char.data(), m_char.size());
+			}
+			else
+			{
+				break;
+			}
+		}
 	}
 
 	return true;
@@ -27,7 +35,17 @@ size_t String_descriptor_base::size() const
 	size_t len = 1+1;
 	if(m_str)
 	{
-		len += 2U * strlen(m_str);
+		for(size_t i = 0; i < str_len_max; i++)
+		{
+			if(m_str[i])
+			{
+				len += 2;
+			}
+			else
+			{
+				break;
+			}
+		}
 	}
-	return len;
+	return std::min(len, 254U);
 }

@@ -22,9 +22,6 @@ public:
 
 	}
 
-	Interface_descriptor(const Interface_descriptor& rhs) = delete;
-	Interface_descriptor& operator=(const Interface_descriptor& rhs) = delete;
-	
 	typedef std::array<uint8_t, 9> Interface_descriptor_array;
 
 	bool serialize(Interface_descriptor_array* const out_array) const;

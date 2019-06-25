@@ -24,6 +24,6 @@ private:
 	}
 
 	static constexpr uint8_t bDescriptorType = 0x03;
-
+	static constexpr size_t str_len_max = 126;
 	char* m_str;
 };

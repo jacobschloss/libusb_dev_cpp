@@ -1,10 +1,12 @@
 #pragma once
 
+#include "libusb_dev_cpp/descriptor/String_descriptor_base.hpp"
+
 #include "libusb_dev_cpp/util/Desc_table_base.hpp"
 
 #include <string>
 
-class String_desc_table : public Desc_table_base<std::string>
+class String_desc_table : public Desc_table_base<String_descriptor_base>
 {
 public:
 
