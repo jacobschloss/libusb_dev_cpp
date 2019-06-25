@@ -3,7 +3,7 @@ add_library(usb_dev_cpp
 	src/descriptor/Device_descriptor.cpp
 	src/descriptor/Endpoint_descriptor.cpp
 	src/descriptor/Interface_descriptor.cpp
-	src/descriptor/String_descriptor.cpp
+	src/descriptor/String_descriptor_base.cpp
 
 	src/class/cdc/cdc.cpp
 	src/class/cdc/cdc_desc.cpp
@@ -19,7 +19,6 @@ add_library(usb_dev_cpp
 	src/usb_core.cpp
 
 	src/core/Setup_packet.cpp
-	src/core/Control_request.cpp
 	src/core/Request_type.cpp
 	src/core/Get_descriptor.cpp
 

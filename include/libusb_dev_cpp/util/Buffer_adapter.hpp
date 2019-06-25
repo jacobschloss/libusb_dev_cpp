@@ -33,7 +33,8 @@ public:
 		rem_len     = 0;	
 	}
 
-	size_t insert(uint8_t* const buf, const size_t len);
+	size_t insert(const uint8_t buf);
+	size_t insert(const uint8_t* buf, const size_t len);
 
 	size_t size() const
 	{
@@ -43,6 +44,16 @@ public:
 	size_t capacity() const
 	{
 		return buf_maxsize - rem_len;
+	}
+
+	bool full() const
+	{
+		return rem_len == buf_maxsize;
+	}
+
+	bool empty() const
+	{
+		return rem_len == 0;
 	}
 
 	//start of buffer

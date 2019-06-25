@@ -65,21 +65,21 @@ bool CDC_usb::fill_descriptors()
 	return true;
 }
 
-USB_common::USB_RESP CDC_usb::handle_std_device_request(Control_request* const req)
+USB_common::USB_RESP CDC_usb::handle_std_device_request(Setup_packet* const req)
 {
 	USB_common::USB_RESP r = USB_common::USB_RESP::FAIL;
 
-	switch(static_cast<Setup_packet::DEVICE_REQUEST>(req->setup_packet.bRequest))
+	switch(static_cast<Setup_packet::DEVICE_REQUEST>(req->bRequest))
 	{
 		case Setup_packet::DEVICE_REQUEST::GET_DESCRIPTOR:
 		{
 			Get_descriptor get_desc;
-			if(!get_desc.deserialize(req->setup_packet.wValue))
+			if(!get_desc.deserialize(req->wValue))
 			{
 				r = USB_common::USB_RESP::FAIL;
 				break;
 			}
-			const uint16_t lang_id = req->setup_packet.wIndex;
+			const uint16_t lang_id = req->wIndex;
 
 			switch(get_desc.type)
 			{
@@ -114,11 +114,11 @@ USB_common::USB_RESP CDC_usb::handle_std_device_request(Control_request* const r
 
 	return r;
 }
-USB_common::USB_RESP CDC_usb::handle_std_iface_request(Control_request* const req)
+USB_common::USB_RESP CDC_usb::handle_std_iface_request(Setup_packet* const req)
 {
 	return USB_common::USB_RESP::FAIL;
 }
-USB_common::USB_RESP CDC_usb::handle_std_ep_request(Control_request* const req)
+USB_common::USB_RESP CDC_usb::handle_std_ep_request(Setup_packet* const req)
 {
 	return USB_common::USB_RESP::FAIL;
 }

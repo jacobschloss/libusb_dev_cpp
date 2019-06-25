@@ -2,6 +2,9 @@
 
 #include "common_util/Byte_util.hpp"
 
+namespace CDC
+{
+
 bool CDC_header_descriptor::serialize(CDC_header_descriptor_array* const out_array) const
 {
 	(*out_array)[0] = bFunctionLength;
@@ -108,4 +111,6 @@ bool CDC_union_descriptor::serialize(Buffer_adapter* const out_array) const
 	out_array->insert(temp.data(), temp.size());
 
 	return true;
+}
+
 }

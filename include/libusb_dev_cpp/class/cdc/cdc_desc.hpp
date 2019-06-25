@@ -8,6 +8,9 @@
 
 #include <tuple>
 
+namespace CDC
+{
+
 class CDC_header_descriptor : public Descriptor_base
 {
 public:
@@ -23,7 +26,7 @@ public:
 
 	constexpr static uint8_t bFunctionLength = 5;
 	constexpr static uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CLASS_SPECIFIC_INTERFACE);
-	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::HEADER);
+	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(FUNC_DESCRIPTOR_TYPE::HEADER);
 	uint16_t bcdCDC;
 
 	static_assert(std::tuple_size<CDC_header_descriptor_array>::value == bFunctionLength);
@@ -44,7 +47,7 @@ public:
 
 	constexpr static uint8_t bFunctionLength = 5;
 	constexpr static uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CLASS_SPECIFIC_INTERFACE);
-	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::CALL_MGMT);
+	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(FUNC_DESCRIPTOR_TYPE::CALL_MGMT);
 	uint8_t bmCapabilities;
 	uint8_t bDataInterface;
 
@@ -66,7 +69,7 @@ public:
 
 	constexpr static uint8_t bFunctionLength = 4;
 	constexpr static uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CLASS_SPECIFIC_INTERFACE);
-	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::ACM);
+	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(FUNC_DESCRIPTOR_TYPE::ACM);
 	uint8_t bmCapabilities;
 
 	static_assert(std::tuple_size<CDC_acm_descriptor_array>::value == bFunctionLength);
@@ -87,7 +90,7 @@ public:
 
 	constexpr static uint8_t bFunctionLength = 5;
 	constexpr static uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CLASS_SPECIFIC_INTERFACE);
-	constexpr static uint8_t bDescriptorSubtype = static_cast<uint8_t>(DESCRIPTOR_TYPE_CDC::UNION);
+	constexpr static uint8_t bDescriptorSubtype = static_cast<uint8_t>(FUNC_DESCRIPTOR_TYPE::UNION);
 	uint8_t bMasterInterface;
 	uint8_t bSlaveInterface0;
 
@@ -114,3 +117,5 @@ public:
 	uint8_t bParityType;
 	uint8_t bDataBits;
 };
+
+}

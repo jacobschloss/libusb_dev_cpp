@@ -1,6 +1,7 @@
 #pragma once
 
 #include "libusb_dev_cpp/usb_common.hpp"
+#include "libusb_dev_cpp/core/Setup_packet.hpp"
 
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
@@ -55,11 +56,11 @@ protected:
 	void handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
 	void handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 
-	virtual USB_common::USB_RESP process_request(Control_request* const req);
+	virtual USB_common::USB_RESP process_request(Setup_packet* const req);
 
-	virtual USB_common::USB_RESP handle_std_device_request(Control_request* const req);
-	virtual USB_common::USB_RESP handle_std_iface_request(Control_request* const req);
-	virtual USB_common::USB_RESP handle_std_ep_request(Control_request* const req);
+	virtual USB_common::USB_RESP handle_std_device_request(Setup_packet* const req);
+	virtual USB_common::USB_RESP handle_std_iface_request(Setup_packet* const req);
+	virtual USB_common::USB_RESP handle_std_ep_request(Setup_packet* const req);
 
 	virtual bool set_configuration(const uint8_t bConfigurationValue);
 	virtual bool get_configuration(uint8_t* const bConfigurationValue);
@@ -105,7 +106,7 @@ protected:
 
 	usb_driver_base* m_driver;
 
-	Control_request m_ctrl_req;
+	Setup_packet m_setup_packet;
 
 	uint8_t m_address;
 	uint8_t m_configuration;

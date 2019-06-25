@@ -2,7 +2,12 @@
 
 #include <algorithm>
 
-size_t Buffer_adapter::insert(uint8_t* const buf, const size_t len)
+size_t Buffer_adapter::insert(const uint8_t buf)
+{
+	return insert(&buf, 1);
+}
+
+size_t Buffer_adapter::insert(const uint8_t* buf, const size_t len)
 {
 	const size_t num_to_copy = std::min(len, capacity());
 

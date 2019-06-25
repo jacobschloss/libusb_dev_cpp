@@ -12,126 +12,156 @@
 #include <cstdint>
 #include <cstddef>
 
-enum class CDC_CLASS_CODE : uint8_t
+namespace CDC
 {
-	CDC = 0x02,
-	CDC_DATA = 0x0A
-};
 
-enum class CDC_SUBCLASS_CODE : uint8_t
-{
-	ACM = 0x02
-};
+	constexpr static uint8_t COMM_DEVICE_CLASS_CODE    = 0x02;
+	constexpr static uint8_t COMM_INTERFACE_CLASS_CODE = 0x02;
 
-enum class CDC_PROTO_CODE : uint8_t
-{
-	NONE   = 0x00,
-	V25TER = 0x01
-};
+	enum class COMM_INTERFACE_SUBCLASS_CODE : uint8_t
+	{
+		DLCM = 0x01,
+		ACM  = 0x02,
+		TCM  = 0x03
+	};
 
-enum class CDC_DATA_PROTO_CODE : uint8_t
-{
-	NTB     = 0x02,
-	HOST    = 0xFD,
-	CDCSPEC = 0xFE
-};
+	enum class COMM_CLASS_PROTO_CODE : uint8_t
+	{
+		NONE      = 0x00,
+		V250      = 0X01,
+		PCCA101   = 0x02,
+		PCCA101AO = 0x03,
+		GSM707    = 0x04,
+		GPP2707   = 0x05,
+		CS0017O   = 0x06,
+		USBEEM    = 0x07,
+		VENDOR    = 0xFF
+	};
 
-enum class DESCRIPTOR_TYPE_CDC : uint8_t
-{
-	HEADER    = 0x00,
-	CALL_MGMT = 0x01,
-	ACM       = 0x02,
-	UNION     = 0x06,
-	COUNTRY   = 0x07
-};
+	constexpr static uint8_t DATA_INTERFACE_CLASS_CODE    = 0x0A;
+	constexpr static uint8_t DATA_INTERFACE_SUBCLASS_CODE = 0x00;
 
-enum class CDC_REQUESTS : uint8_t
-{
-	SEND_ENCAPSULATED_CMD  = 0x00,
-	GET_ENCAPSULATED_RESP  = 0x01,
-	SET_COMM_FEATURE       = 0x02,
-	GET_COMM_FEATURE       = 0x03,
+	enum class DATA_INTERFACE_PROTO_CODE : uint8_t
+	{
+		NONE    = 0x00,
+		NTB     = 0x01,
+		HOST    = 0xFD,
+		VENDOR  = 0xFF
+	};
 
-	SET_AUX_LINE_STATE     = 0x10,
-	SET_HOOK_STATE         = 0x11,
-	PULSE_SETUP            = 0x12,
-	SEND_PULSE             = 0x13,
-	SET_PULSE_TIME         = 0x14,
-	RING_AUX_JACK          = 0x15,
+	enum class FUNC_DESCRIPTOR_TYPE : uint8_t
+	{
+		HEADER    = 0x00,
+		CALL_MGMT = 0x01,
+		ACM       = 0x02,
+		UNION     = 0x06,
+		COUNTRY   = 0x07
+	};
 
-	CLEAR_COMM_FEATURE     = 0x04,
-	SET_LINE_CODING        = 0x20,
-	GET_LINE_CODING        = 0x21,
-	SET_CONTROL_LINE_STATE = 0x22,
-	SEND_BREAK             = 0x23,
+	enum class FUNC_DESCRIPTOR_SUBTYPE : uint8_t
+	{
+		HEADER    = 0x00
+	};
 
-	SET_RINGER_PARMS       = 0x30,
-	GET_RINGER_PARMS       = 0x31,
-	SET_OPERATION_PARMS    = 0x32,
-	GET_OPERATION_PARMS    = 0x33,
+	enum class CDC_REQUESTS : uint8_t
+	{
+		SEND_ENCAPSULATED_CMD  = 0x00,
+		GET_ENCAPSULATED_RESP  = 0x01,
+		SET_COMM_FEATURE       = 0x02,
+		GET_COMM_FEATURE       = 0x03,
 
-	SET_LINE_PARMS         = 0x34,
-	GET_LINE_PARMS         = 0x35,
-	DIAL_DIGITS            = 0x36,
-	SET_UNIT_PARAMETER     = 0x37,
-	GET_UNIT_PARAMETER     = 0x38,
-	CLEAR_UNIT_PARAMETER   = 0x39,
-	GET_PROFILE            = 0x3A,
+		SET_AUX_LINE_STATE     = 0x10,
+		SET_HOOK_STATE         = 0x11,
+		PULSE_SETUP            = 0x12,
+		SEND_PULSE             = 0x13,
+		SET_PULSE_TIME         = 0x14,
+		RING_AUX_JACK          = 0x15,
 
-	SET_ETHERNET_MULTICAST_FILTERS               = 0x40,
-	SET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER = 0x41,
-	GET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER = 0x42,
-	SET_ETHERNET_PACKET_FILTER                   = 0x43,
-	GET_ETHERNET_STATISTIC                       = 0x44,
+		CLEAR_COMM_FEATURE     = 0x04,
+		SET_LINE_CODING        = 0x20,
+		GET_LINE_CODING        = 0x21,
+		SET_CONTROL_LINE_STATE = 0x22,
+		SEND_BREAK             = 0x23,
 
-	SET_ATM_DATA_FORMAT                          = 0x50,
-	GET_ATM_DEVICE_STATISTICS                    = 0x51,
-	SET_ATM_DEFAULT_VC                           = 0x52,
-	GET_ATM_VC_STATISTICS                        = 0x53
+		SET_RINGER_PARMS       = 0x30,
+		GET_RINGER_PARMS       = 0x31,
+		SET_OPERATION_PARMS    = 0x32,
+		GET_OPERATION_PARMS    = 0x33,
 
-};
+		SET_LINE_PARMS         = 0x34,
+		GET_LINE_PARMS         = 0x35,
+		DIAL_DIGITS            = 0x36,
+		SET_UNIT_PARAMETER     = 0x37,
+		GET_UNIT_PARAMETER     = 0x38,
+		CLEAR_UNIT_PARAMETER   = 0x39,
+		GET_PROFILE            = 0x3A,
 
-enum class CDC_NOTIFICATION : uint8_t
-{
-	NETWORK_CONNECTION = 0x00,
-	RESPONSE_AVAILABLE = 0x01,
-	SERIAL_STATE       = 0x20,
-	SPEED_CHANGE       = 0x2A
-};
+		SET_ETHERNET_MULTICAST_FILTERS               = 0x40,
+		SET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER = 0x41,
+		GET_ETHERNET_POWER_MANAGEMENT_PATTERN_FILTER = 0x42,
+		SET_ETHERNET_PACKET_FILTER                   = 0x43,
+		GET_ETHERNET_STATISTIC                       = 0x44,
 
-enum class CDC_ACMGMNTCAP : uint8_t
-{
-	COMM_FEATURE = 0x01,
-	LINE         = 0x02,
-	BRK          = 0x04,
-	NOTIFY       = 0x08
-};
+		SET_ATM_DATA_FORMAT                          = 0x50,
+		GET_ATM_DEVICE_STATISTICS                    = 0x51,
+		SET_ATM_DEFAULT_VC                           = 0x52,
+		GET_ATM_VC_STATISTICS                        = 0x53,
 
-enum class CDC_CALLMGMTCAP : uint8_t
-{
-	CALL_MGMT = 0x01,
-	DATA_INTF = 0x02
-};
+		GET_NTB_PARAMETERS    = 0x80,
+		GET_NET_ADDRESS       = 0x81,
+		SET_NET_ADDRESS       = 0x82,
+		GET_NTB_FORMAT        = 0x83,
+		SET_NTB_FORMAT        = 0x84,
+		GET_NTB_INPUT_SIZE    = 0x85,
+		SET_NTB_INPUT_SIZE    = 0x86,
+		GET_MAX_DATAGRAM_SIZE = 0x87,
+		SET_MAX_DATAGRAM_SIZE = 0x88,
+		GET_CRC_MODE          = 0x89,
+		SET_CRC_MODE          = 0x8A
+	};
 
-enum class CDC_LINECODE : uint8_t
-{
-	STOP_BITS_1   = 0x00,
-	STOP_BITS_1_5 = 0x01,
-	STOP_BITS_2   = 0x02,
-	NO_PARITY     = 0x00,
-	ODD_PARITY    = 0x01,
-	EVEN_PARITY   = 0x02,
-	MARK_PARITY   = 0x03,
-	SPACE_PARITY  = 0x04
-};
+	enum class CDC_NOTIFICATION : uint8_t
+	{
+		NETWORK_CONNECTION = 0x00,
+		RESPONSE_AVAILABLE = 0x01,
+		SERIAL_STATE       = 0x20,
+		SPEED_CHANGE       = 0x2A
+	};
 
-enum class CDC_STATE : uint16_t
-{
-	RX_CARRIER = 0x0001,
-	TX_CARRIER = 0x0002,
-	BREAK      = 0x0004,
-	RING       = 0x0008,
-	FRAMING    = 0x0010,
-	PARITY     = 0x0020,
-	OVERRUN    = 0x0040
-};
+	enum class CDC_ACMGMNTCAP : uint8_t
+	{
+		COMM_FEATURE = 0x01,
+		LINE         = 0x02,
+		BRK          = 0x04,
+		NOTIFY       = 0x08
+	};
+
+	enum class CDC_CALLMGMTCAP : uint8_t
+	{
+		CALL_MGMT = 0x01,
+		DATA_INTF = 0x02
+	};
+
+	enum class CDC_LINECODE : uint8_t
+	{
+		STOP_BITS_1   = 0x00,
+		STOP_BITS_1_5 = 0x01,
+		STOP_BITS_2   = 0x02,
+		NO_PARITY     = 0x00,
+		ODD_PARITY    = 0x01,
+		EVEN_PARITY   = 0x02,
+		MARK_PARITY   = 0x03,
+		SPACE_PARITY  = 0x04
+	};
+
+	enum class CDC_STATE : uint16_t
+	{
+		RX_CARRIER = 0x0001,
+		TX_CARRIER = 0x0002,
+		BREAK      = 0x0004,
+		RING       = 0x0008,
+		FRAMING    = 0x0010,
+		PARITY     = 0x0020,
+		OVERRUN    = 0x0040
+	};
+}
