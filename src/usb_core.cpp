@@ -656,8 +656,28 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 					break;
 				}
 				case USB_common::DESCRIPTOR_TYPE::STRING:
-				case USB_common::DESCRIPTOR_TYPE::INTERFACE:
-				case USB_common::DESCRIPTOR_TYPE::ENDPOINT:
+				{
+					uint16_t lang = req->wIndex;
+
+					String_desc_table::String_desc_const_ptr string_desc = m_desc_table->get_string_descriptor(desc_index);
+					if(!string_desc)
+					{
+						r = USB_common::USB_RESP::FAIL;
+						break;
+					}
+
+					m_tx_buffer.reset();
+					if(!string_desc->serialize(&m_tx_buffer))
+					{
+						r = USB_common::USB_RESP::FAIL;
+						break;
+					}
+
+					r = USB_common::USB_RESP::ACK;
+					break;
+				}
+				// case USB_common::DESCRIPTOR_TYPE::INTERFACE:
+				// case USB_common::DESCRIPTOR_TYPE::ENDPOINT:
 				default:
 				{
 					r = USB_common::USB_RESP::NAK;

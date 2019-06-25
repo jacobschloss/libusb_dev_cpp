@@ -1,5 +1,7 @@
 #include "libusb_dev_cpp/descriptor/String_descriptor_base.hpp"
 
+#include "common_util/Byte_util.hpp"
+
 #include <cstring>
 
 bool String_descriptor_base::serialize(Buffer_adapter* const out_array) const
@@ -48,4 +50,28 @@ size_t String_descriptor_base::size() const
 		}
 	}
 	return std::min(len, 254U);
+}
+
+
+
+bool String_descriptor_zero::serialize(Buffer_adapter* const out_array) const
+{
+	const uint8_t len = size();
+	out_array->insert(len);
+	out_array->insert(bDescriptorType);
+
+	std::array<uint8_t, 2> u16;
+	for(size_t i = 0; i < len; i++)
+	{
+		u16[0] = Byte_util::get_b0(static_cast<uint16_t>(m_lang[i]));
+		u16[1] = Byte_util::get_b1(static_cast<uint16_t>(m_lang[i]));
+		out_array->insert(u16.data(), u16.size());
+	}
+
+	return true;
+}
+
+size_t String_descriptor_zero::size() const
+{
+	return 1U + 1U + 2U*m_size;
 }

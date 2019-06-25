@@ -88,6 +88,10 @@ public:
 	{
 		m_string_table.set_config(idx, desc);
 	}
+	void set_string_descriptor(const String_desc_table::String_desc_ptr& desc, const uint8_t idx)
+	{
+		m_string_table.set_config(idx, desc);
+	}
 
 	String_desc_table::String_desc_ptr get_string_descriptor(const uint8_t idx)
 	{

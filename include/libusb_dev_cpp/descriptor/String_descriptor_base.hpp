@@ -20,7 +20,7 @@ public:
 		m_str = str;
 	}
 
-private:
+protected:
 	
 	static void ascii_to_utf16le(const uint8_t c, std::array<uint8_t, 2>* const buf)
 	{
@@ -51,7 +51,7 @@ public:
 		m_size = count;
 	}
 
-private:
+protected:
 	LANGID const * m_lang;
 	size_t m_size;
 };
