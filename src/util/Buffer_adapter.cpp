@@ -8,18 +8,10 @@
 
 #include <algorithm>
 
-size_t Buffer_adapter::insert(const uint8_t buf)
-{
-	return insert(&buf, 1);
-}
-
-size_t Buffer_adapter::insert(const uint8_t* buf, const size_t len)
+size_t Buffer_adapter_base::insert(const uint8_t* buf_ptr, const size_t len)
 {
 	const size_t num_to_copy = std::min(len, capacity());
-
-	std::copy_n(buf, num_to_copy, buf_ptr + rem_len);
-
-	rem_len += num_to_copy;
+	std::copy_n(buf_ptr, num_to_copy, m_buf_ptr);
 
 	return num_to_copy;
 }

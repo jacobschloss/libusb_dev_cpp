@@ -249,7 +249,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 				}
 
 				//setup read
-				if(m_setup_packet.wLength > m_rx_buffer.buf_maxsize)
+				if(m_setup_packet.wLength > m_rx_buffer.max_size())
 				{
 					stall_control_ep(ep);
 					return;
@@ -527,9 +527,8 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 		case Setup_packet::DEVICE_REQUEST::GET_STATUS:
 		{
 			m_tx_buffer.reset();
-			m_tx_buffer.buf_ptr[0] = 0;
-			m_tx_buffer.buf_ptr[1] = 0;
-			m_tx_buffer.rem_len = 2;
+			m_tx_buffer.insert(0);
+			m_tx_buffer.insert(0);
 
 			// if(selfpowered)
 			// {
@@ -631,7 +630,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 
 					for(size_t i = 0; i < config_desc->size(); i++)
 					{
-						uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - 0x%02X", m_tx_buffer.buf_ptr[i]);
+						uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - 0x%02X", m_tx_buffer.data()[i]);
 					}
 
 					//send iface and ep descriptors if asked for more
@@ -663,9 +662,9 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 				}
 				case USB_common::DESCRIPTOR_TYPE::STRING:
 				{
-					uint16_t lang = req->wIndex;
+					String_descriptor_zero::LANGID lang_idx = static_cast<String_descriptor_zero::LANGID>(req->wIndex);
 
-					String_desc_table::String_desc_const_ptr string_desc = m_desc_table->get_string_descriptor(desc_index);
+					String_desc_table::String_desc_const_ptr string_desc = m_desc_table->get_string_descriptor(lang_idx, desc_index);
 					if(!string_desc)
 					{
 						r = USB_common::USB_RESP::FAIL;
@@ -767,8 +766,10 @@ USB_common::USB_RESP USB_core::handle_std_iface_request(Setup_packet* const req)
 		{
 			m_tx_buffer.reset();
 
-			m_tx_buffer.insert(0);
-			m_tx_buffer.insert(0);
+			std::array<uint8_t, 2> status;
+			status.fill(0);
+
+			m_tx_buffer.insert(status.data(), status.size());
 
 			r = USB_common::USB_RESP::ACK;
 			break;

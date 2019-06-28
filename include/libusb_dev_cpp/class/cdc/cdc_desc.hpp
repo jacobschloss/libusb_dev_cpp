@@ -51,6 +51,49 @@ public:
 		return bFunctionLength;
 	}
 
+	enum class CALL_MGMT_CHANNEL
+	{
+		COMM_CLASS_IFACE,
+		DATA_CLASS_IFACE
+	};
+
+	bool set_call_mgmt(const CALL_MGMT_CHANNEL ch)
+	{
+		bool ret = false;
+		switch(ch)
+		{
+			case CALL_MGMT_CHANNEL::COMM_CLASS_IFACE:
+			{
+				bmCapabilities &= ~(0x02);
+				ret = true;
+				break;
+			}
+			case CALL_MGMT_CHANNEL::DATA_CLASS_IFACE:
+			{
+				bmCapabilities |= 0x02;
+				ret = true;
+				break;
+			}
+			default:
+			{
+				ret = false;
+				break;
+			}
+		}
+		return ret;
+	}
+	void set_self_call_mgmt_handle(const bool self)
+	{
+		if(self)
+		{
+			bmCapabilities |= 0x01;
+		}
+		else
+		{
+			bmCapabilities &= ~(0x01);
+		}
+	}
+
 	constexpr static uint8_t bFunctionLength = 5;
 	constexpr static uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CLASS_SPECIFIC_INTERFACE);
 	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(FUNC_DESCRIPTOR_TYPE::CALL_MGMT);

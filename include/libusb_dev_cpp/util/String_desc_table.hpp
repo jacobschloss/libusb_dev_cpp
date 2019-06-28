@@ -12,6 +12,7 @@
 
 #include <string>
 
+
 class String_desc_table : public Desc_table_base<String_descriptor_base>
 {
 public:
@@ -21,4 +22,14 @@ public:
 
 private:
 	// std::map<uint16_t, std::map<uint8_t, String_descriptor_n> > m_map;
+};
+
+class Multilang_string_desc_table
+{
+public:
+
+	String_desc_table* get_table(const String_descriptor_zero::LANGID lang);
+	const String_desc_table* get_table(const String_descriptor_zero::LANGID lang) const;
+
+	std::map<String_descriptor_zero::LANGID, String_desc_table> m_table;
 };

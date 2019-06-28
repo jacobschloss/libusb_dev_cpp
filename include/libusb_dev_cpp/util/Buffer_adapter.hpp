@@ -9,7 +9,90 @@
 #include <cstdint>
 #include <cstddef>
 
-class Buffer_adapter
+class Buffer_adapter_base
+{
+public:
+
+	Buffer_adapter_base()
+	{
+		clear();
+	}
+
+	Buffer_adapter_base(uint8_t* const buf_ptr, const size_t buf_max)
+	{
+		reset(buf_ptr, buf_max);
+	}
+
+	virtual ~Buffer_adapter_base()
+	{
+
+	}
+
+	void clear()
+	{
+		m_buf_ptr  = nullptr;
+		m_buf_max  = 0;
+		m_buf_size = 0;
+	}
+
+	void reset()
+	{
+		m_buf_size  = 0;	
+	}
+
+	void reset(uint8_t* const buf, const size_t maxlen)
+	{
+		m_buf_ptr  = buf;
+		m_buf_max  = maxlen;
+		m_buf_size = 0;
+	}
+
+
+	size_t insert(const uint8_t buf)
+	{
+		return insert(&buf, 1);
+	}
+
+	size_t insert(const uint8_t* buf_ptr, const size_t len);
+
+	uint8_t* data()
+	{
+		return m_buf_ptr;
+	}
+	const uint8_t* data() const
+	{
+		return m_buf_ptr;
+	}
+
+	bool full() const
+	{
+		return m_buf_size == m_buf_max;
+	}
+	bool empty() const
+	{
+		return m_buf_size == 0;
+	}
+
+	size_t size() const
+	{
+		return m_buf_size;
+	}
+	size_t capacity() const
+	{
+		return m_buf_max - m_buf_size;
+	}
+	size_t max_size() const
+	{
+		return m_buf_max;
+	}
+
+protected:
+	uint8_t* m_buf_ptr;
+	size_t m_buf_max;
+	size_t m_buf_size;
+};
+
+class Buffer_adapter : public Buffer_adapter_base
 {
 public:
 	Buffer_adapter()
@@ -19,54 +102,38 @@ public:
 
 	void clear()
 	{
-		buf_ptr     = nullptr;
-		buf_maxsize = 0;
-		curr_ptr    = nullptr;
-		rem_len     = 0;
+		Buffer_adapter_base::clear();
+		curr_ptr = nullptr;
+		rem_len  = 0;
 	}
 
 	void reset()
 	{
-		curr_ptr    = buf_ptr;
-		rem_len     = 0;	
+		Buffer_adapter_base::reset();
+		curr_ptr = m_buf_ptr;
+		rem_len  = 0;	
 	}
 
 	void reset(uint8_t* const buf, const size_t maxlen)
 	{
-		buf_ptr     = buf;
-		buf_maxsize = maxlen;
-		curr_ptr    = buf;
-		rem_len     = 0;	
+		Buffer_adapter_base::reset(buf, maxlen);
+		curr_ptr = buf;
+		rem_len  = 0;	
 	}
 
-	size_t insert(const uint8_t buf);
-	size_t insert(const uint8_t* buf, const size_t len);
-
-	size_t size() const
+	size_t insert(const uint8_t buf)
 	{
-		return rem_len;
+		return insert(&buf, 1);
 	}
 
-	size_t capacity() const
+	size_t insert(const uint8_t* buf, const size_t len)
 	{
-		return buf_maxsize - rem_len;
+		const size_t num_inserted = Buffer_adapter_base::insert(buf, len);
+		
+		rem_len += num_inserted;
+
+		return num_inserted;
 	}
-
-	bool full() const
-	{
-		return rem_len == buf_maxsize;
-	}
-
-	bool empty() const
-	{
-		return rem_len == 0;
-	}
-
-	//start of buffer
-	uint8_t* buf_ptr;
-
-	//max length
-	size_t   buf_maxsize;
 
 	//current position in buffer
 	uint8_t* curr_ptr;

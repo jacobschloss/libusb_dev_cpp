@@ -90,23 +90,37 @@ public:
 		return m_endpoint_table.get_config(idx);
 	}
 
-	void set_string_descriptor(const String_descriptor_base& desc, const uint8_t idx)
+	void set_string_descriptor(const String_descriptor_base& desc, const String_descriptor_zero::LANGID lang, const uint8_t idx)
 	{
-		m_string_table.set_config(idx, desc);
+		String_desc_table* const string_table = m_string_table.get_table(lang);
+		string_table->set_config(idx, desc);
 	}
-	void set_string_descriptor(const String_desc_table::String_desc_ptr& desc, const uint8_t idx)
+	void set_string_descriptor(const String_desc_table::String_desc_ptr& desc, const String_descriptor_zero::LANGID lang, const uint8_t idx)
 	{
-		m_string_table.set_config(idx, desc);
-	}
-
-	String_desc_table::String_desc_ptr get_string_descriptor(const uint8_t idx)
-	{
-		return m_string_table.get_config(idx);
+		String_desc_table* const string_table = m_string_table.get_table(lang);
+		string_table->set_config(idx, desc);
 	}
 
-	String_desc_table::String_desc_const_ptr get_string_descriptor(const uint8_t idx) const
+	String_desc_table::String_desc_ptr get_string_descriptor(const String_descriptor_zero::LANGID lang, const uint8_t idx)
 	{
-		return m_string_table.get_config(idx);
+		String_desc_table* const string_table = m_string_table.get_table(lang);
+		if(!string_table)
+		{
+			return String_desc_table::String_desc_ptr();
+		}
+
+		return string_table->get_config(idx);
+	}
+
+	String_desc_table::String_desc_const_ptr get_string_descriptor(const String_descriptor_zero::LANGID lang, const uint8_t idx) const
+	{
+		const String_desc_table* string_table = m_string_table.get_table(lang);
+		if(!string_table)
+		{
+			return String_desc_table::String_desc_const_ptr();
+		}
+		
+		return string_table->get_config(idx);
 	}
 #if 0
 	bool set_descriptor(const Desc_base_ptr& desc, const USB_common::DESCRIPTOR_TYPE type, const uint8_t idx)
@@ -232,5 +246,5 @@ protected:
 	Config_desc_table m_config_table;
 	Endpoint_desc_table m_endpoint_table;
 	Iface_desc_table m_iface_table;
-	String_desc_table m_string_table;
+	Multilang_string_desc_table m_string_table;
 };
