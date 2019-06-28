@@ -11,7 +11,9 @@
 size_t Buffer_adapter_base::insert(const uint8_t* buf_ptr, const size_t len)
 {
 	const size_t num_to_copy = std::min(len, capacity());
-	std::copy_n(buf_ptr, num_to_copy, m_buf_ptr);
+	std::copy_n(buf_ptr, num_to_copy, m_buf_ptr + m_buf_size);
+
+	m_buf_size += num_to_copy;
 
 	return num_to_copy;
 }

@@ -44,6 +44,7 @@ class String_descriptor_zero : public String_descriptor_base
 public:
 	enum class LANGID : uint16_t
 	{
+		NONE = 0x0000,
 		ENUS = 0x0409
 	};
 

@@ -27,6 +27,7 @@ add_library(usb_dev_cpp
 	src/util/Config_desc_table.cpp
 	src/util/Iface_desc_table.cpp
 	src/util/String_desc_table.cpp
+	src/util/EP_buffer_mgr.cpp
 
 	src/util/Descriptor_table.cpp
 )
