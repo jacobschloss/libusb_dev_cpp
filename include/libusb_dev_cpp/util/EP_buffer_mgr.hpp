@@ -37,12 +37,20 @@ public:
 protected:
 };
 
-template<size_t NUM_EP>
+template<size_t NUM_EP, size_t BUFFER_DEPTH>
 class EP_buffer_mgr_freertos
 {
 	public:
+	
+	//driver process
+	Buffer_adapter_base* get_empty_buffer(const uint8_t ep) override;
+	void enqueue_buffer(Buffer_adapter_base* const buf) override;
+
+	//application process
+	Buffer_adapter_base* wait_buffer(const uint8_t ep) override;
+	void release_buffer(Buffer_adapter_base* const buf) override;
 
 	protected:
-		std::array<Object_pool<EP_buffer_array<512, 32>, 4>, NUM_EP> m_tx_buffer;
-		std::array<Object_pool<EP_buffer_array<512, 32>, 4>, NUM_EP> m_rx_buffer;
+		std::array<Object_pool<EP_buffer_array<512, 32>, BUFFER_DEPTH>, NUM_EP> m_tx_buffer;
+		std::array<Object_pool<EP_buffer_array<512, 32>, BUFFER_DEPTH>, NUM_EP> m_rx_buffer;
 };
