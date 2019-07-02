@@ -203,11 +203,11 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_CONTROL_STATE::IDLE:
 		{
-			Setup_packet::Setup_packet_array setup_packet_array = m_driver->get_last_setup_packet();
+			const Setup_packet::Setup_packet_array* setup_packet_array = m_driver->get_last_setup_packet();
 
 			//decode
 			m_setup_packet = Setup_packet();
-			if(!m_setup_packet.deserialize(setup_packet_array))
+			if(!m_setup_packet.deserialize(*setup_packet_array))
 			{
 				return;
 			}
@@ -278,22 +278,22 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::RXDATA:
 		{
-			auto& packet = m_driver->get_last_data_packet();
+			const Buffer_adapter_base* packet = m_driver->get_last_data_packet();
 
-			size_t to_copy = std::min(packet.size(), m_rx_buffer.rem_len);
-			std::copy_n(packet.data(), to_copy, m_rx_buffer.curr_ptr);
+			size_t to_copy = std::min(packet->size(), m_rx_buffer.rem_len);
+			std::copy_n(packet->data(), to_copy, m_rx_buffer.curr_ptr);
 
-			if(m_rx_buffer.rem_len < packet.size())
+			if(m_rx_buffer.rem_len < packet->size())
 			{
 				//we got too much data, that is weird
 				stall_control_ep(ep);
 				return;
 			}
-			else if(m_rx_buffer.rem_len != packet.size())
+			else if(m_rx_buffer.rem_len != packet->size())
 			{
 				//keep reading
-				m_rx_buffer.curr_ptr += packet.size();
-				m_rx_buffer.rem_len -= packet.size();
+				m_rx_buffer.curr_ptr += packet->size();
+				m_rx_buffer.rem_len -= packet->size();
 
 				//skip evt processing
 				return;

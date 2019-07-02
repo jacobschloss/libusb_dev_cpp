@@ -8,6 +8,10 @@
 
 #include "libusb_dev_cpp/usb_common.hpp"
 
+#include "libusb_dev_cpp/core/Setup_packet.hpp"
+
+#include "libusb_dev_cpp/util/Buffer_adapter.hpp"
+
 #include <cstdint>
 #include <cstddef>
 
@@ -147,9 +151,9 @@ public:
 
 	virtual void set_data0(const uint8_t ep) = 0;
 
-	virtual const std::array<uint8_t, 8>& get_last_setup_packet() const = 0;
+	virtual const Setup_packet::Setup_packet_array* get_last_setup_packet() const = 0;
 
-	virtual const Data_packet& get_last_data_packet() const = 0;
+	virtual const Buffer_adapter_base* get_last_data_packet() const = 0;
 
 protected:
 

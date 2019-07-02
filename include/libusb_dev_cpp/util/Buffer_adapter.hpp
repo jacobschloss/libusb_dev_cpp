@@ -86,6 +86,11 @@ public:
 		return m_buf_max;
 	}
 
+	void resize(const size_t len)
+	{
+		m_buf_size = len;
+	}
+
 protected:
 	uint8_t* m_buf_ptr;
 	size_t m_buf_max;

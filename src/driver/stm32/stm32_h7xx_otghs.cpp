@@ -132,6 +132,9 @@ bool stm32_h7xx_otghs::config_ep_tx_fifo(const uint8_t ep, const size_t len)
 
 stm32_h7xx_otghs::stm32_h7xx_otghs()
 {
+	m_tx_buffer = nullptr;
+	m_rx_buffer = nullptr;
+
 	m_ep0_cfg.num = 0;
 	m_ep0_cfg.size = 0;
 	m_ep0_cfg.type = EP_TYPE::UNCONF;
@@ -979,14 +982,41 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 				//wait to process until later in the ep isr
 				if(BCNT != 0)
 				{
-					m_last_data_packet.len = BCNT;
-					ep_read(ep_num, m_last_data_packet.buf.data(), BCNT);
+					if(ep_num != 0)
+					{
+						//try to get a buffer
+						Buffer_adapter_base* buf = m_rx_buffer->allocate_buffer(ep_num);
+						if(buf == nullptr)
+						{
+							//buffer underrun, we have nowhere to put the data!
+							// TODO: stall host?
+							// TODO: pre-allocate, so we can stall before the host gives us new data?
+							uart1_log<64>(LOG_LEVEL::ERROR, "USB_OTG_GINTSTS_RXFLVL", "rx buffer allocation fail");
+						}
 
-					// for(size_t i = 0; i < BCNT; i++)
-					// {
-					// 	uart1_printf<16>("%02X ", m_last_data_packet.buf[i]);
-					// }
-					// uart1_printf<16>("\r\n");
+						buf->resize(BCNT);
+						ep_read(ep_num, buf->data(), BCNT);
+
+						//enqueue so the application thread can be notified and read it
+						m_rx_buffer->enqueue_buffer(ep_num, buf);
+
+						for(size_t i = 0; i < BCNT; i++)
+						{
+							uart1_printf<16>("%02X ", buf->data()[i]);
+						}
+					}
+					else
+					{
+						m_last_ep0_data_packet.resize(BCNT);
+						ep_read(ep_num, m_last_ep0_data_packet.data(), BCNT);	
+	
+						for(size_t i = 0; i < BCNT; i++)
+						{
+							uart1_printf<16>("%02X ", m_last_ep0_data_packet.data()[i]);
+						}
+					}
+
+					uart1_printf<16>("\r\n");
 				}
 
 				break;

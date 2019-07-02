@@ -1,3 +1,9 @@
+/**
+ * @author Jacob Schloss <jacob.schloss@suburbanembedded.com>
+ * @copyright Copyright (c) 2019 Suburban Embedded. All rights reserved.
+ * @license Licensed under the 3-Clause BSD license. See LICENSE for details
+*/
+
 #pragma once
 
 #include "libusb_dev_cpp/util/Buffer_adapter.hpp"
@@ -7,6 +13,7 @@
 template <size_t LEN, size_t ALLIGN>
 class EP_buffer_array : public Buffer_adapter_base
 {
+public:
 
 	EP_buffer_array() : Buffer_adapter_base(m_buf.data(), m_buf.size())
 	{
@@ -27,30 +34,100 @@ public:
 	}
 
 	//driver process
-	virtual Buffer_adapter_base* get_empty_buffer(const uint8_t ep) = 0;
-	virtual void enqueue_buffer(Buffer_adapter_base* const buf) = 0;
+	virtual Buffer_adapter_base* allocate_buffer(const uint8_t ep) = 0;
+	virtual bool enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 
 	//application process
 	virtual Buffer_adapter_base* wait_buffer(const uint8_t ep) = 0;
-	virtual void release_buffer(Buffer_adapter_base* const buf) = 0;
+	virtual void release_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 
 protected:
 };
 
-template<size_t NUM_EP, size_t BUFFER_DEPTH>
-class EP_buffer_mgr_freertos
+template<size_t NUM_EP, size_t BUFFER_DEPTH, size_t BUFFER_LEN, size_t BUFFER_ALLIGN>
+class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 {
 	public:
 	
 	//driver process
-	Buffer_adapter_base* get_empty_buffer(const uint8_t ep) override;
-	void enqueue_buffer(Buffer_adapter_base* const buf) override;
+	Buffer_adapter_base* allocate_buffer(const uint8_t ep) override
+	{
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
+
+		return m_ep_buffer[ep].allocate();
+	}
+	bool enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
+	{
+		if(ep > NUM_EP)
+		{
+			return false;
+		}
+
+		// EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = dynamic_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = static_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		if(ptr == nullptr)
+		{
+			return false;	
+		}
+
+		return m_app_buffer[ep].push_back(ptr);
+	}
 
 	//application process
-	Buffer_adapter_base* wait_buffer(const uint8_t ep) override;
-	void release_buffer(Buffer_adapter_base* const buf) override;
+	Buffer_adapter_base* wait_buffer(const uint8_t ep) override
+	{
+		return wait_buffer(ep, 0);
+	}
+	Buffer_adapter_base* wait_buffer(const uint8_t ep, const TickType_t xTicksToWait)
+	{
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
+
+		Buffer_adapter_base* buf = nullptr;
+		m_app_buffer[ep].pop_front(&buf, xTicksToWait);
+
+		return buf;
+	}
+	template< class Rep, class Period >
+	Buffer_adapter_base* wait_buffer(const uint8_t ep, const std::chrono::duration<Rep,Period>& duration)
+	{
+		const std::chrono::milliseconds duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+		return wait_buffer(ep, pdMS_TO_TICKS(duration_ms.count()));
+	}
+	void release_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
+	{
+		if(ep > NUM_EP)
+		{
+			//throw? log?
+			return;
+		}
+
+		// EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = dynamic_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = static_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		if(ptr == nullptr)
+		{
+			return;	
+		}
+
+		m_ep_buffer[ep].deallocate(ptr);
+	}
 
 	protected:
-		std::array<Object_pool<EP_buffer_array<512, 32>, BUFFER_DEPTH>, NUM_EP> m_tx_buffer;
-		std::array<Object_pool<EP_buffer_array<512, 32>, BUFFER_DEPTH>, NUM_EP> m_rx_buffer;
+		std::array<
+			Object_pool<
+				EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>,
+				BUFFER_DEPTH
+				>,
+			NUM_EP> m_ep_buffer;
+		std::array<
+			Queue_static_pod<
+				Buffer_adapter_base*,
+				BUFFER_DEPTH
+				>,
+			NUM_EP> m_app_buffer;
 };
