@@ -128,7 +128,7 @@ public:
 
 	size_t insert(const uint8_t buf)
 	{
-		return insert(&buf, 1);
+		return Buffer_adapter::insert(&buf, 1);
 	}
 
 	size_t insert(const uint8_t* buf, const size_t len)

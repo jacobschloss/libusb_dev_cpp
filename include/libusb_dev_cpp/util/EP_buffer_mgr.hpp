@@ -39,7 +39,8 @@ public:
 	virtual Buffer_adapter_base* get_buffer(const uint8_t ep) = 0;
 
 	//driver process
-	virtual Buffer_adapter_base* allocate_buffer(const uint8_t ep) = 0;
+	virtual Buffer_adapter_base* poll_allocate_buffer(const uint8_t ep) = 0;
+	virtual Buffer_adapter_base* wait_allocate_buffer(const uint8_t ep) = 0;
 	virtual bool enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 
 	//application process
@@ -65,7 +66,6 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		return NUM_EP;
 	}
 
-	//driver process
 	bool set_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
 	{
 		if(ep > NUM_EP)
@@ -86,7 +86,7 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		return m_active_buffer[ep];
 	}
 
-	Buffer_adapter_base* allocate_buffer(const uint8_t ep) override
+	Buffer_adapter_base* poll_allocate_buffer(const uint8_t ep) override
 	{
 		if(ep > NUM_EP)
 		{
@@ -95,6 +95,35 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 
 		return m_ep_buffer[ep].allocate();
 	}
+	Buffer_adapter_base* wait_allocate_buffer(const uint8_t ep) override
+	{
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
+
+		return m_ep_buffer[ep].try_allocate_for_ticks(portMAX_DELAY);
+	}
+	Buffer_adapter_base* allocate_buffer(const uint8_t ep, const TickType_t xTicksToWait)
+	{
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
+
+		return m_ep_buffer[ep].try_allocate_for_ticks(xTicksToWait);
+	}
+	template< class Rep, class Period >
+	Buffer_adapter_base* allocate_buffer(const uint8_t ep, const std::chrono::duration<Rep,Period>& duration)
+	{
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
+
+		return m_ep_buffer[ep].try_allocate_for(duration);
+	}
+
 	bool enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
 	{
 		if(ep > NUM_EP)
@@ -112,10 +141,9 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		return m_app_buffer[ep].push_back(ptr);
 	}
 
-	//application process
 	Buffer_adapter_base* wait_buffer(const uint8_t ep) override
 	{
-		return wait_buffer(ep, 0);
+		return wait_buffer(ep, portMAX_DELAY);
 	}
 	Buffer_adapter_base* wait_buffer(const uint8_t ep, const TickType_t xTicksToWait)
 	{

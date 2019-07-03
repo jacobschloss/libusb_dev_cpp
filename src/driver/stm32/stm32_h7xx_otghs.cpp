@@ -166,7 +166,7 @@ bool stm32_h7xx_otghs::initialize()
 
 	for(size_t i = 0; i < m_rx_buffer->get_num_ep(); i++)
 	{
-		Buffer_adapter_base* rx_buf = m_rx_buffer->allocate_buffer(i);
+		Buffer_adapter_base* rx_buf = m_rx_buffer->poll_allocate_buffer(i);
 		if(rx_buf == nullptr)
 		{
 			for(size_t j = 0; j < m_rx_buffer->get_num_ep(); j++)
@@ -1016,7 +1016,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 						Buffer_adapter_base* curr_buf = m_rx_buffer->get_buffer(ep_num);
 
 						//try to get a new buffer
-						Buffer_adapter_base* new_buf = m_rx_buffer->allocate_buffer(ep_num);
+						Buffer_adapter_base* new_buf = m_rx_buffer->poll_allocate_buffer(ep_num);
 						new_buf->clear();
 						if(new_buf == nullptr)
 						{
@@ -1045,8 +1045,10 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 						}
 						else
 						{
-							//under run
+							//OUT buffer underrun
 							//we will need to cnak and epena when the app frees a buffer
+							m_rx_buffer->set_buffer(ep_num, nullptr);
+							get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_SNAK | USB_OTG_DOEPCTL_EPENA);
 						}
 					}
 					else
@@ -1351,5 +1353,61 @@ bool stm32_h7xx_otghs::get_tx_ep_config(const uint8_t addr, ep_cfg* const out_ep
 	}
 	
 	*out_ep = m_tx_ep_cfg[addr - 1];
+	return true;
+}
+
+//application waits for a buffer with data
+//this might be better as a stream thing rather than buffer exchange
+Buffer_adapter_base* stm32_h7xx_otghs::wait_rx_buffer(const uint8_t ep_num)
+{
+	return m_rx_buffer->wait_buffer(ep_num);
+}
+//application returns rx buffer to driver. will allow reception to continue in event of buffer underrun
+void stm32_h7xx_otghs::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_base* const buf)
+{
+	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
+	
+	m_rx_buffer->release_buffer(ep_addr, buf);
+
+	//TODO: we may need to mask usb isr here
+	//it might be safe for now, since we only do this if the ep has no loaded OUT buffer
+	//which means that NAK is set
+	if(m_rx_buffer->get_buffer(ep_addr) == nullptr)
+	{
+		//clear a OUT nak, since we have a new buffer to read to
+
+		Buffer_adapter_base* act_buf = m_rx_buffer->poll_allocate_buffer(ep_addr);
+		
+		m_rx_buffer->set_buffer(ep_addr, act_buf);
+
+		get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+	}
+}
+
+//application wait for usable tx buffer
+Buffer_adapter_base* stm32_h7xx_otghs::wait_tx_buffer(const uint8_t ep_num)
+{
+	return m_tx_buffer->wait_allocate_buffer(ep_num);
+}
+//application give buffer to driver for transmission
+bool stm32_h7xx_otghs::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_base* const buf)
+{
+	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
+
+	//TODO: we may need to mask usb isr here
+	//it might be safe for now, since we only do this if the ep has no loaded IN buffer
+	//which means that NAK is set
+
+	if(!m_tx_buffer->enqueue_buffer(ep_num, buf))
+	{
+		return false;
+	}
+
+	if(m_tx_buffer->get_buffer(ep_addr) == nullptr)
+	{
+		m_tx_buffer->set_buffer(ep_addr, buf);
+		get_ep_in(ep_num)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+	}
+
 	return true;
 }

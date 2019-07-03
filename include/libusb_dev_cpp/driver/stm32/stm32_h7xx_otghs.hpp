@@ -71,16 +71,16 @@ public:
 		m_rx_buffer = rx_buffer;
 	}
 
-	// //application waits for a buffer with data
-	// //this might be better as a stream thing rather than buffer exchange
-	// Buffer_adapter_base* wait_rx_buffer(const uint8_t ep);
-	// //application returns rx buffer to driver. will allow reception to continue in event of buffer underrun
-	// bool release_rx_buffer(const uint8_t ep, Buffer_adapter_base* const buf);
+	//application waits for a buffer with data
+	//this might be better as a stream thing rather than buffer exchange
+	Buffer_adapter_base* wait_rx_buffer(const uint8_t ep);
+	//application returns rx buffer to driver. will allow reception to continue in event of buffer underrun
+	void release_rx_buffer(const uint8_t ep, Buffer_adapter_base* const buf);
 
-	// //application wait for usable tx buffer
-	// Buffer_adapter_base* wait_tx_buffer(const uint8_t ep);
-	// //application give buffer to driver for transmission
-	// bool enqueue_tx_buffer(const uint8_t ep, Buffer_adapter_base* const buf);
+	//application wait for usable tx buffer
+	Buffer_adapter_base* wait_tx_buffer(const uint8_t ep);
+	//application give buffer to driver for transmission
+	bool enqueue_tx_buffer(const uint8_t ep, Buffer_adapter_base* const buf);
 
 protected:
 
@@ -96,7 +96,7 @@ protected:
 
 	static constexpr size_t MAX_NUM_EP = 5;//ep0 + ep1..ep5
 	static constexpr size_t MAX_RX_PACKET = 512;
-	static constexpr size_t RX_FIFO_SIZE = (10 + (2*MAX_RX_PACKET/4) + 2 + 2);
+	static constexpr size_t RX_FIFO_SIZE = (10 + (4*MAX_RX_PACKET/4) + 2 + 2);
 	static constexpr size_t MAX_FIFO_LEN_U32 = 1024; //uint32 * 1024, 4096B
 	static constexpr size_t MAX_FIFO_LEN_U8  = 4096; //uint8  * 4096, 4096B
 
