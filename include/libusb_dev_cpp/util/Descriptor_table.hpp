@@ -15,6 +15,8 @@
 #include "libusb_dev_cpp/util/String_desc_table.hpp"
 #include "libusb_dev_cpp/util/Endpoint_desc_table.hpp"
 
+#include <list>
+
 //TODO: for class data, a linked list of base class things might actually work well. CDC needs to send a lot of data after the iface before the ep
 
 class Descriptor_table
@@ -121,6 +123,11 @@ public:
 		}
 		
 		return string_table->get_config(idx);
+	}
+
+	void add_other_descriptor(std::shared_ptr<Descriptor_base> other_desc)
+	{
+		m_other_desc.push_back(other_desc);
 	}
 #if 0
 	bool set_descriptor(const Desc_base_ptr& desc, const USB_common::DESCRIPTOR_TYPE type, const uint8_t idx)
@@ -247,4 +254,6 @@ protected:
 	Endpoint_desc_table m_endpoint_table;
 	Iface_desc_table m_iface_table;
 	Multilang_string_desc_table m_string_table;
+
+	std::list< std::shared_ptr<Descriptor_base> > m_other_desc;
 };

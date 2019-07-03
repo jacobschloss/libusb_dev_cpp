@@ -33,6 +33,11 @@ public:
 		
 	}
 
+	//both
+	virtual size_t get_num_ep() const = 0;
+	virtual bool set_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
+	virtual Buffer_adapter_base* get_buffer(const uint8_t ep) = 0;
+
 	//driver process
 	virtual Buffer_adapter_base* allocate_buffer(const uint8_t ep) = 0;
 	virtual bool enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
@@ -49,7 +54,38 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 {
 	public:
 	
+	EP_buffer_mgr_freertos()
+	{
+		m_active_buffer.fill(nullptr);
+	}
+
+	//both
+	size_t get_num_ep() const override
+	{
+		return NUM_EP;
+	}
+
 	//driver process
+	bool set_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
+	{
+		if(ep > NUM_EP)
+		{
+			return false;
+		}
+
+		m_active_buffer[ep] = buf;
+		return true;
+	}
+	Buffer_adapter_base* get_buffer(const uint8_t ep) override
+	{
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
+
+		return m_active_buffer[ep];
+	}
+
 	Buffer_adapter_base* allocate_buffer(const uint8_t ep) override
 	{
 		if(ep > NUM_EP)
@@ -124,6 +160,11 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 				BUFFER_DEPTH
 				>,
 			NUM_EP> m_ep_buffer;
+
+		std::array<
+			Buffer_adapter_base*,
+			NUM_EP> m_active_buffer;
+
 		std::array<
 			Queue_static_pod<
 				Buffer_adapter_base*,

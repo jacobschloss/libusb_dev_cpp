@@ -71,6 +71,17 @@ public:
 		m_rx_buffer = rx_buffer;
 	}
 
+	// //application waits for a buffer with data
+	// //this might be better as a stream thing rather than buffer exchange
+	// Buffer_adapter_base* wait_rx_buffer(const uint8_t ep);
+	// //application returns rx buffer to driver. will allow reception to continue in event of buffer underrun
+	// bool release_rx_buffer(const uint8_t ep, Buffer_adapter_base* const buf);
+
+	// //application wait for usable tx buffer
+	// Buffer_adapter_base* wait_tx_buffer(const uint8_t ep);
+	// //application give buffer to driver for transmission
+	// bool enqueue_tx_buffer(const uint8_t ep, Buffer_adapter_base* const buf);
+
 protected:
 
 	void set_data0(const uint8_t ep) override;
