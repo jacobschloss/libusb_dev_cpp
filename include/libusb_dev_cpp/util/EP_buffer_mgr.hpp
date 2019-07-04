@@ -38,13 +38,19 @@ public:
 	virtual bool set_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 	virtual Buffer_adapter_base* get_buffer(const uint8_t ep) = 0;
 
-	//driver process
+	
+	virtual Buffer_adapter_base* poll_allocate_buffer_isr(const uint8_t ep) = 0;
 	virtual Buffer_adapter_base* poll_allocate_buffer(const uint8_t ep) = 0;
 	virtual Buffer_adapter_base* wait_allocate_buffer(const uint8_t ep) = 0;
-	virtual bool enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
+	
+	virtual bool poll_enqueue_buffer_isr(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
+	virtual bool poll_enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
+	
+	virtual Buffer_adapter_base* poll_dequeue_buffer_isr(const uint8_t ep) = 0;
+	virtual Buffer_adapter_base* poll_dequeue_buffer(const uint8_t ep) = 0;
+	virtual Buffer_adapter_base* wait_dequeue_buffer(const uint8_t ep) = 0;
 
-	//application process
-	virtual Buffer_adapter_base* wait_buffer(const uint8_t ep) = 0;
+	virtual void release_buffer_isr(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 	virtual void release_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 
 protected:
@@ -85,7 +91,20 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 
 		return m_active_buffer[ep];
 	}
+	Buffer_adapter_base* poll_allocate_buffer_isr(const uint8_t ep) override
+	{
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
 
+		BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+		Buffer_adapter_base* buf = m_ep_buffer[ep].try_allocate_isr(&xHigherPriorityTaskWoken);
+
+		portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+		return buf;
+	}
 	Buffer_adapter_base* poll_allocate_buffer(const uint8_t ep) override
 	{
 		if(ep > NUM_EP)
@@ -124,7 +143,24 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		return m_ep_buffer[ep].try_allocate_for(duration);
 	}
 
-	bool enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
+	bool poll_enqueue_buffer_isr(const uint8_t ep, Buffer_adapter_base* const buf) override
+	{
+		if(ep > NUM_EP)
+		{
+			return false;
+		}
+
+		// EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = dynamic_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = static_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		if(ptr == nullptr)
+		{
+			return false;	
+		}
+
+		return m_app_buffer[ep].push_back_isr(ptr);
+	}
+
+	bool poll_enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
 	{
 		if(ep > NUM_EP)
 		{
@@ -141,11 +177,27 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		return m_app_buffer[ep].push_back(ptr);
 	}
 
-	Buffer_adapter_base* wait_buffer(const uint8_t ep) override
+	Buffer_adapter_base* poll_dequeue_buffer_isr(const uint8_t ep) override
 	{
-		return wait_buffer(ep, portMAX_DELAY);
+		if(ep > NUM_EP)
+		{
+			return nullptr;
+		}
+
+		Buffer_adapter_base* buf = nullptr;
+		m_app_buffer[ep].pop_front_isr(&buf);
+
+		return buf;
 	}
-	Buffer_adapter_base* wait_buffer(const uint8_t ep, const TickType_t xTicksToWait)
+	Buffer_adapter_base* poll_dequeue_buffer(const uint8_t ep) override
+	{
+		return wait_dequeue_buffer(ep, 0);
+	}
+	Buffer_adapter_base* wait_dequeue_buffer(const uint8_t ep) override
+	{
+		return wait_dequeue_buffer(ep, portMAX_DELAY);
+	}
+	Buffer_adapter_base* wait_dequeue_buffer(const uint8_t ep, const TickType_t xTicksToWait)
 	{
 		if(ep > NUM_EP)
 		{
@@ -158,10 +210,10 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		return buf;
 	}
 	template< class Rep, class Period >
-	Buffer_adapter_base* wait_buffer(const uint8_t ep, const std::chrono::duration<Rep,Period>& duration)
+	Buffer_adapter_base* wait_dequeue_buffer(const uint8_t ep, const std::chrono::duration<Rep,Period>& duration)
 	{
 		const std::chrono::milliseconds duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-		return wait_buffer(ep, pdMS_TO_TICKS(duration_ms.count()));
+		return wait_dequeue_buffer(ep, pdMS_TO_TICKS(duration_ms.count()));
 	}
 	void release_buffer(const uint8_t ep, Buffer_adapter_base* const buf) override
 	{
@@ -179,6 +231,24 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		}
 
 		m_ep_buffer[ep].deallocate(ptr);
+	}
+
+	void release_buffer_isr(const uint8_t ep, Buffer_adapter_base* const buf) override
+	{
+		if(ep > NUM_EP)
+		{
+			//throw? log?
+			return;
+		}
+
+		// EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = dynamic_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = static_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
+		if(ptr == nullptr)
+		{
+			return;	
+		}
+
+		m_ep_buffer[ep].deallocate_isr(ptr);
 	}
 
 	protected:
