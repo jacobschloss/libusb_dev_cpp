@@ -658,7 +658,10 @@ int stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint1
 							USB_OTG_DIEPTSIZ_PKTCNT | USB_OTG_DIEPTSIZ_XFRSIZ,
 							_VAL2FLD(USB_OTG_DIEPTSIZ_PKTCNT, 1) | _VAL2FLD(USB_OTG_DIEPTSIZ_XFRSIZ, len)
 						);
-		Register_util::mask_set_bits(&epin->DIEPCTL, USB_OTG_DIEPCTL_SD0PID_SEVNFRM, USB_OTG_DIEPCTL_EPENA | USB_OTG_DIEPCTL_CNAK);
+		Register_util::mask_set_bits(
+			&epin->DIEPCTL, 
+			USB_OTG_DIEPCTL_SD0PID_SEVNFRM, 
+			USB_OTG_DIEPCTL_EPENA | USB_OTG_DIEPCTL_CNAK);
 	}
 	else
 	{
@@ -674,7 +677,11 @@ int stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint1
 							USB_OTG_DIEPTSIZ_MULCNT | USB_OTG_DIEPTSIZ_PKTCNT | USB_OTG_DIEPTSIZ_XFRSIZ,
 							_VAL2FLD(USB_OTG_DIEPTSIZ_MULCNT, 1) | _VAL2FLD(USB_OTG_DIEPTSIZ_PKTCNT, 1) | _VAL2FLD(USB_OTG_DIEPTSIZ_XFRSIZ, len)
 						);
-		Register_util::mask_set_bits(&epin->DIEPCTL, USB_OTG_DIEPCTL_STALL | USB_OTG_DIEPCTL_SD0PID_SEVNFRM, USB_OTG_DOEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
+		
+		Register_util::mask_set_bits(
+			&epin->DIEPCTL,
+			USB_OTG_DIEPCTL_STALL | USB_OTG_DIEPCTL_SD0PID_SEVNFRM,
+			USB_OTG_DOEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
 	}
 
 	volatile uint32_t* const fifo = get_ep_fifo(ep_addr);
@@ -889,18 +896,77 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 			if(DIEPINT & USB_OTG_DIEPINT_XFRC)
 			{
+				//transfer complete
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_XFRC;
+				
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_IEPINT", "DIEPINT[%d] XFRC 0x%08X", ep_num, DIEPINT);
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_IEPINT", "event EP_TX");
 
-				//transfer complete
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_XFRC;
+				{
+					Buffer_adapter_base* const curr_tx_buf = m_tx_buffer->get_buffer(ep_num);
+					if(curr_tx_buf)
+					{
+						m_tx_buffer->release_buffer(ep_num, curr_tx_buf);
+					}
+				}
+
+				//see if there is a new packet to enqueue
+				Buffer_adapter_base* const new_tx_buf = m_tx_buffer->poll_dequeue_buffer(ep_num);
+				if(new_tx_buf)
+				{
+					m_tx_buffer->set_buffer(ep_num, new_tx_buf);
+					ep_write(0x80 | ep_num, new_tx_buf->data(), new_tx_buf->size());
+				}
+				else
+				{
+					m_tx_buffer->set_buffer(ep_num, nullptr);
+					get_ep_in(ep_num)->DIEPCTL |= (USB_OTG_DOEPCTL_SNAK);
+				}
 
 				event = USB_common::USB_EVENTS::EP_TX;
 				ep_num = ep_num | 0x80;
 			}
+			else if(DIEPINT & USB_OTG_DIEPINT_NAK)
+			{
+				//NAK tx or rx
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_NAK;
+			}
+			else if(DIEPINT & USB_OTG_DIEPINT_PKTDRPSTS)
+			{
+				//isoc out packet dropped
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_PKTDRPSTS;
+			}
+			else if(DIEPINT & USB_OTG_DIEPINT_TXFIFOUDRN)
+			{
+				//tx fifo underrun
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_TXFIFOUDRN;
+			}
+			else if(DIEPINT & USB_OTG_DIEPINT_INEPNE)
+			{
+				//IN token received with EP mismatch
+				//Data on top of non periodic txfifo is for ep other than for in token
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_INEPNE;
+			}
+			else if(DIEPINT & USB_OTG_DIEPINT_ITTXFE)
+			{
+				//IN token received when Tx FIFO is empty
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_ITTXFE;
+			}
 			else if(DIEPINT & USB_OTG_DIEPINT_TOC)
 			{
+				//Timeout condition
 				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_IEPINT", "DIEPINT[%d] TOC 0x%08X", ep_num, DIEPINT);
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_TOC;
+			}
+			else if(DIEPINT & (1 << 2U))
+			{
+				//AHB bus error
+				get_ep_in(ep_num)->DIEPINT = 1 << 2U;
+			}
+			else if(DIEPINT & USB_OTG_DIEPINT_EPDISD)
+			{
+				//Endpoint disabled at app request
+				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_EPDISD;
 			}
 			else
 			{
@@ -910,7 +976,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 			//USB_OTG_DIEPINT_TOC
 			//USB_OTG_DIEPINT_TXFE
-			//USB_OTG_DIEPINT_EPDISDf
+			//USB_OTG_DIEPINT_EPDISD
 			//USB_OTG_DIEPINT_ITTXFE
 			//USB_OTG_DIEPINT_INEPNE
 			//USB_OTG_DIEPINT_TXFIFOUDRN
@@ -1015,31 +1081,25 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 						//get active buffer
 						Buffer_adapter_base* curr_buf = m_rx_buffer->get_buffer(ep_num);
 
-						//try to get a new buffer
-						Buffer_adapter_base* new_buf = m_rx_buffer->poll_allocate_buffer(ep_num);
-						new_buf->clear();
-						if(new_buf == nullptr)
-						{
-							//buffer underrun, we have nowhere to put the data!
-							// TODO: stall host?
-							// TODO: pre-allocate, so we can stall before the host gives us new data?
-							uart1_log<64>(LOG_LEVEL::ERROR, "USB_OTG_GINTSTS_RXFLVL", "rx buffer allocation fail");
-						}
-
+						//read data from core's fifo into buffer
+						curr_buf->reset();
 						curr_buf->resize(BCNT);
 						ep_read(ep_num, curr_buf->data(), BCNT);
 
-						//enqueue so the application thread can be notified and read it
-						m_rx_buffer->enqueue_buffer(ep_num, curr_buf);
+						//enqueue buffer so the application thread can be notified and read it
+						m_rx_buffer->poll_enqueue_buffer(ep_num, curr_buf);
 
 						for(size_t i = 0; i < BCNT; i++)
 						{
 							uart1_printf<16>("%02X ", curr_buf->data()[i]);
 						}
 
+						//try to get a new buffer
+						Buffer_adapter_base* new_buf = m_rx_buffer->poll_allocate_buffer(ep_num);
 						//update the active buffer
 						if(new_buf)
 						{
+							new_buf->reset();
 							m_rx_buffer->set_buffer(ep_num, new_buf);
 							get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 						}
@@ -1047,8 +1107,9 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 						{
 							//OUT buffer underrun
 							//we will need to cnak and epena when the app frees a buffer
+							uart1_log<64>(LOG_LEVEL::ERROR, "USB_OTG_GINTSTS_RXFLVL", "rx buffer allocation fail");
 							m_rx_buffer->set_buffer(ep_num, nullptr);
-							get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_SNAK | USB_OTG_DOEPCTL_EPENA);
+							get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_SNAK);
 						}
 					}
 					else
@@ -1360,7 +1421,7 @@ bool stm32_h7xx_otghs::get_tx_ep_config(const uint8_t addr, ep_cfg* const out_ep
 //this might be better as a stream thing rather than buffer exchange
 Buffer_adapter_base* stm32_h7xx_otghs::wait_rx_buffer(const uint8_t ep_num)
 {
-	return m_rx_buffer->wait_buffer(ep_num);
+	return m_rx_buffer->wait_dequeue_buffer(ep_num);
 }
 //application returns rx buffer to driver. will allow reception to continue in event of buffer underrun
 void stm32_h7xx_otghs::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_base* const buf)
@@ -1387,7 +1448,9 @@ void stm32_h7xx_otghs::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_ba
 //application wait for usable tx buffer
 Buffer_adapter_base* stm32_h7xx_otghs::wait_tx_buffer(const uint8_t ep_num)
 {
-	return m_tx_buffer->wait_allocate_buffer(ep_num);
+	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
+
+	return m_tx_buffer->wait_allocate_buffer(ep_addr);
 }
 //application give buffer to driver for transmission
 bool stm32_h7xx_otghs::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_base* const buf)
@@ -1398,7 +1461,7 @@ bool stm32_h7xx_otghs::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_ba
 	//it might be safe for now, since we only do this if the ep has no loaded IN buffer
 	//which means that NAK is set
 
-	if(!m_tx_buffer->enqueue_buffer(ep_num, buf))
+	if(!m_tx_buffer->poll_enqueue_buffer(ep_addr, buf))
 	{
 		return false;
 	}
@@ -1406,7 +1469,8 @@ bool stm32_h7xx_otghs::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_ba
 	if(m_tx_buffer->get_buffer(ep_addr) == nullptr)
 	{
 		m_tx_buffer->set_buffer(ep_addr, buf);
-		get_ep_in(ep_num)->DIEPCTL |= (USB_OTG_DIEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+
+		ep_write(ep_num, buf->data(), buf->size());
 	}
 
 	return true;
