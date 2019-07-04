@@ -49,7 +49,7 @@ void USB_core::set_descriptor_table(Descriptor_table* const desc_table)
 	m_desc_table = desc_table;
 }
 
-bool USB_core::poll()
+bool USB_core::poll_driver()
 {
 	m_driver->poll(std::bind(&USB_core::handle_event, this, std::placeholders::_1, std::placeholders::_2));
 	return true;
@@ -105,13 +105,19 @@ bool USB_core::handle_reset()
 	return true;
 }
 
-bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
+bool USB_core::poll_event_loop()
 {
-	const uint8_t ep_addr = USB_common::get_ep_addr(ep);
+	usb_core_event core_evt;
+	if(!m_event_queue.pop_front(&core_evt))
+	{
+		return false;
+	}
+
+	const uint8_t ep_addr = USB_common::get_ep_addr(core_evt.ep);
 
 	USB_common::Event_callback func = nullptr;
 	bool ret = false;
-	switch(evt)
+	switch(core_evt.event)
 	{
 		case USB_common::USB_EVENTS::RESET:
 		{
@@ -123,7 +129,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 			func = m_driver->get_ep_rx_callback(ep_addr);
 			if(func)
 			{
-				func(evt, ep);
+				func(core_evt.event, core_evt.ep);
 			}
 			break;
 		}
@@ -132,7 +138,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 			func = m_driver->get_ep_tx_callback(ep_addr);
 			if(func)
 			{
-				func(evt, ep);
+				func(core_evt.event, core_evt.ep);
 			}
 			break;
 		}
@@ -141,7 +147,7 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 			func = m_driver->get_ep_setup_callback(ep_addr);
 			if(func)
 			{
-				func(evt, ep);
+				func(core_evt.event, core_evt.ep);
 			}
 			break;
 		}
@@ -173,11 +179,21 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 	func = m_driver->get_event_callback(ep_addr);//todo use the get addr helper func
 	if(func)
 	{
-		func(evt, ep);
+		func(core_evt.event, core_evt.ep);
 		ret = true;
 	}
 
 	return ret;
+}
+
+bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
+{
+	usb_core_event core_evt;
+	core_evt.event = evt;
+	core_evt.ep = ep;
+	m_event_queue.push_back(core_evt);
+
+	return true;
 }
 
 bool USB_core::handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep)

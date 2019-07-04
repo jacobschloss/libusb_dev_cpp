@@ -14,6 +14,8 @@
 #include "libusb_dev_cpp/util/Descriptor_table.hpp"
 #include "libusb_dev_cpp/util/Buffer_adapter.hpp"
 
+#include "freertos_cpp_util/Queue_static_pod.hpp"
+
 class USB_core
 {
 public:
@@ -36,7 +38,12 @@ public:
 
 	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter& tx_buf, const Buffer_adapter& rx_buf);
 	void set_descriptor_table(Descriptor_table* const desc_table);
-	bool poll();
+	
+	//poll driver
+	bool poll_driver();
+
+	//handle events
+	bool poll_event_loop();
 
 	bool enable();
 	bool disable();
@@ -79,6 +86,14 @@ protected:
 
 	Buffer_adapter m_rx_buffer;
 	Buffer_adapter m_tx_buffer;
+
+	struct usb_core_event
+	{
+		USB_common::USB_EVENTS event;
+		uint8_t	ep;
+	};
+	Queue_static_pod<usb_core_event, 32> m_event_queue;
+
 /*
 	enum class USB_DEVICE_STATE
 	{
