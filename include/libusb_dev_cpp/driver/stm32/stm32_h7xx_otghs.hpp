@@ -96,7 +96,7 @@ protected:
 
 	static constexpr size_t MAX_NUM_EP = 5;//ep0 + ep1..ep5
 	static constexpr size_t MAX_RX_PACKET = 512;
-	static constexpr size_t RX_FIFO_SIZE = (10 + (4*MAX_RX_PACKET/4) + 2 + 2);
+	static constexpr size_t RX_FIFO_SIZE = (10 + (4*(MAX_RX_PACKET/4+1)) + 2 + 2);
 	static constexpr size_t MAX_FIFO_LEN_U32 = 1024; //uint32 * 1024, 4096B
 	static constexpr size_t MAX_FIFO_LEN_U8  = 4096; //uint8  * 4096, 4096B
 
