@@ -155,6 +155,17 @@ public:
 
 	virtual const Buffer_adapter_base* get_last_data_packet() const = 0;
 
+	//application waits for a buffer with data
+	//this might be better as a stream thing rather than buffer exchange
+	virtual Buffer_adapter_base* wait_rx_buffer(const uint8_t ep) = 0;
+	//application returns rx buffer to driver. will allow reception to continue in event of buffer underrun
+	virtual void release_rx_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
+
+	//application wait for usable tx buffer
+	virtual Buffer_adapter_base* wait_tx_buffer(const uint8_t ep) = 0;
+	//application give buffer to driver for transmission
+	virtual bool enqueue_tx_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
+
 protected:
 
 	std::array<USB_common::Event_callback, USB_common::USB_EVENTS_MAX> m_event_callbacks;

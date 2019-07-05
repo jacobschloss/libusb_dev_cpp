@@ -1045,11 +1045,10 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_RXFLVL)
 	{
-		uart1_log<64>(LOG_LEVEL::INFO, "GINTSTS", "0x%08X", GINTSTS);
-
 		//pop top fifo entry
 		const uint32_t GRXSTSP = OTG->GRXSTSP;
 
+		uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "GINTSTS 0x%08X", GINTSTS);
 		uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "GRXSTSP 0x%08X", GRXSTSP);
 
 		const uint32_t STSPHST = (GRXSTSP & 0x08000000) >> 27;
