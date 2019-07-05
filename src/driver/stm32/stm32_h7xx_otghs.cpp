@@ -1001,7 +1001,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 				get_ep_out(ep_num)->DOEPINT = USB_OTG_DOEPINT_XFRC;
 
-				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_GINTSTS_RXFLVL", "event EP_RX");
+				uart1_log<64>(LOG_LEVEL::INFO, "USB_OTG_DOEPINT_XFRC", "event EP_RX");
 				event = USB_common::USB_EVENTS::EP_RX;
 			}
 			else if(DOEPINT & USB_OTG_DOEPINT_STUP)
