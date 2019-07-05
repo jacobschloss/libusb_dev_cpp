@@ -1461,16 +1461,18 @@ bool stm32_h7xx_otghs::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_ba
 	//it might be safe for now, since we only do this if the ep has no loaded IN buffer
 	//which means that NAK is set
 
-	if(!m_tx_buffer->poll_enqueue_buffer(ep_addr, buf))
-	{
-		return false;
-	}
-
 	if(m_tx_buffer->get_buffer(ep_addr) == nullptr)
 	{
 		m_tx_buffer->set_buffer(ep_addr, buf);
 
 		ep_write(ep_num, buf->data(), buf->size());
+	}
+	else
+	{
+		if(!m_tx_buffer->poll_enqueue_buffer(ep_addr, buf))
+		{
+			return false;
+		}
 	}
 
 	return true;
