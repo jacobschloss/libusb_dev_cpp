@@ -48,6 +48,11 @@ void stm32_h7xx_otghs::core_reset()
 
 	//wait for USB to be idle
 	Register_util::wait_until_set(&OTG->GRSTCTL, USB_OTG_GRSTCTL_AHBIDL);
+
+	for(volatile uint32_t i = 0; i < 1000; i++)
+	{
+		
+	}
 }
 
 //you must configure the ep tx fifo in order, one after another
@@ -210,8 +215,10 @@ bool stm32_h7xx_otghs::enable()
 	//wait for USB to be idle
 	Register_util::wait_until_set(&OTG->GRSTCTL, USB_OTG_GRSTCTL_AHBIDL);
 
+	//disable tranciever
+	Register_util::clear_bits(&(OTG->GCCFG), USB_OTG_GCCFG_PWRDWN);
+
 	//ULPI
-	Register_util::clear_bits(&(OTG->GUSBCFG), USB_OTG_GCCFG_PWRDWN);
 	Register_util::clear_bits(&(OTG->GUSBCFG), USB_OTG_GUSBCFG_TSDPS | USB_OTG_GUSBCFG_ULPIFSLS | USB_OTG_GUSBCFG_PHYSEL);
 	Register_util::clear_bits(&(OTG->GUSBCFG), USB_OTG_GUSBCFG_ULPIEVBUSD | USB_OTG_GUSBCFG_ULPIEVBUSI);
 
@@ -222,42 +229,48 @@ bool stm32_h7xx_otghs::enable()
 	Register_util::set_bits(&OTGD->DCTL, USB_OTG_DCTL_SDIS);
 
 	//start clocks, no sleep gate
-	Register_util::clear_bits(OTGPCTL, USB_OTG_PCGCR_PHYSUSP | USB_OTG_PCGCR_GATEHCLK | USB_OTG_PCGCR_STPPCLK);
+	Register_util::mask_set_bits<uint32_t>(OTGPCTL, 
+		USB_OTG_PCGCR_GATEHCLK | USB_OTG_PCGCR_STPPCLK,
+		(1U << 5) //ENL1GTG
+		);
 
 	//config as device
-	Register_util::clear_bits(&OTG->GUSBCFG, 
-		USB_OTG_GUSBCFG_PTCI       | 
-		USB_OTG_GUSBCFG_PCCI       | 
-		USB_OTG_GUSBCFG_ULPICSM    | 
-		USB_OTG_GUSBCFG_PHYLPCS    | 
-		USB_OTG_GUSBCFG_HNPCAP     | 
-		USB_OTG_GUSBCFG_SRPCAP
+	// Register_util::clear_bits(&OTG->GUSBCFG, 
+	// 	USB_OTG_GUSBCFG_PTCI       | 
+	// 	USB_OTG_GUSBCFG_PCCI       | 
+	// 	USB_OTG_GUSBCFG_ULPICSM    | 
+	// 	USB_OTG_GUSBCFG_PHYLPCS    | 
+	// 	USB_OTG_GUSBCFG_HNPCAP     | 
+	// 	USB_OTG_GUSBCFG_SRPCAP
+	// 	);
+	Register_util::mask_set_bits(&OTG->GUSBCFG, 
+		USB_OTG_GUSBCFG_FHMOD, 
+		USB_OTG_GUSBCFG_FDMOD
 		);
-	Register_util::set_bits(&OTG->GUSBCFG, USB_OTG_GUSBCFG_FDMOD);
-	Register_util::set_bits(&OTG->GUSBCFG, USB_OTG_GUSBCFG_ULPIAR | USB_OTG_GUSBCFG_ULPIIPD);
-	Register_util::mask_set_bits(&OTG->GUSBCFG, USB_OTG_GUSBCFG_TRDT, _VAL2FLD(USB_OTG_GUSBCFG_TRDT,   0x09));
-	Register_util::mask_set_bits(&OTG->GUSBCFG, USB_OTG_GUSBCFG_TOCAL, _VAL2FLD(USB_OTG_GUSBCFG_TOCAL, 0x00));
+	Register_util::mask_set_bits(&OTG->GUSBCFG, 
+		USB_OTG_GUSBCFG_ULPIIPD | USB_OTG_GUSBCFG_ULPIFSLS | USB_OTG_GUSBCFG_PHYLPCS | USB_OTG_GUSBCFG_SRPCAP | USB_OTG_GUSBCFG_PHYSEL,
+		USB_OTG_GUSBCFG_ULPIAR | USB_OTG_GUSBCFG_ULPICSM
+		);
+	Register_util::mask_set_bits(&OTG->GUSBCFG, 
+		USB_OTG_GUSBCFG_TRDT | USB_OTG_GUSBCFG_TOCAL,
+		_VAL2FLD(USB_OTG_GUSBCFG_TRDT,   0x09) | _VAL2FLD(USB_OTG_GUSBCFG_TOCAL, 0x00));
 	
 	//reset since we picked a phy
 	core_reset();
 
-	//power down
-	Register_util::clear_bits(&OTG->GCCFG, (1U << 20) | (1U << 19) | (1U << 18) | (1U << 17) | USB_OTG_GCCFG_PWRDWN);
+	//No vbus sense, power down
+	Register_util::clear_bits(&OTG->GCCFG, USB_OTG_GCCFG_VBDEN | USB_OTG_GCCFG_SDEN | USB_OTG_GCCFG_PDEN | USB_OTG_GCCFG_DCDEN | USB_OTG_GCCFG_BCDEN | USB_OTG_GCCFG_PWRDWN);
 	
-	//No vbus sense
-	Register_util::clear_bits<uint32_t>(&OTG->GCCFG, 1U << 21);
-
 	//force B state valid
-	Register_util::set_bits<uint32_t>(&OTG->GOTGCTL, USB_OTG_GOTGCTL_BVALOEN | USB_OTG_GOTGCTL_BVALOVAL);
+	Register_util::mask_set_bits<uint32_t>(&OTG->GOTGCTL, 
+		USB_OTG_GOTGCTL_EHEN | USB_OTG_GOTGCTL_DHNPEN | USB_OTG_GOTGCTL_DHNPEN | USB_OTG_GOTGCTL_HNPRQ | USB_OTG_GOTGCTL_AVALOVAL | USB_OTG_GOTGCTL_AVALOEN | USB_OTG_GOTGCTL_SRQ,
+		USB_OTG_GOTGCTL_OTGVER | USB_OTG_GOTGCTL_BVALOEN | USB_OTG_GOTGCTL_BVALOVAL
+		);
 
-	// Register_util::mask_set_bits(
-		// &OTGD->DCFG, 
-		// USB_OTG_DCFG_PERSCHIVL | USB_OTG_DCFG_PFIVL | USB_OTG_DCFG_DAD | USB_OTG_DCFG_DSPD,
-		// _VAL2FLD(USB_OTG_DCFG_PERSCHIVL, 0x00) | _VAL2FLD(USB_OTG_DCFG_PFIVL, 0x00) | _VAL2FLD(USB_OTG_DCFG_DAD, 0x00) | _VAL2FLD(USB_OTG_DCFG_DSPD, 0x00)
-		// );
-	Register_util::set_bits(
+	Register_util::mask_set_bits(
 		&OTGD->DCFG, 
-		_VAL2FLD(USB_OTG_DCFG_PERSCHIVL, 0x00) | _VAL2FLD(USB_OTG_DCFG_PFIVL, 0x00) | _VAL2FLD(USB_OTG_DCFG_DAD, 0x00) | _VAL2FLD(USB_OTG_DCFG_DSPD, 0x00)
+		USB_OTG_DCFG_PERSCHIVL | USB_OTG_DCFG_PFIVL | USB_OTG_DCFG_DAD | USB_OTG_DCFG_DSPD,
+		_VAL2FLD(USB_OTG_DCFG_PERSCHIVL, 0x01) | _VAL2FLD(USB_OTG_DCFG_PFIVL, 0x00) | _VAL2FLD(USB_OTG_DCFG_DAD, 0x00) | _VAL2FLD(USB_OTG_DCFG_DSPD, 0x00)
 		);
 	// Register_util::set_bits(&OTGD->DCFG, USB_OTG_DCFG_NZLSOHSK);
 
@@ -327,7 +340,6 @@ bool stm32_h7xx_otghs::disable()
 
 bool stm32_h7xx_otghs::connect()
 {
-	Register_util::set_bits(&OTG->GCCFG, USB_OTG_GCCFG_PWRDWN);
 	Register_util::clear_bits(&OTGD->DCTL, USB_OTG_DCTL_SDIS);
 
 	return true;
@@ -335,7 +347,6 @@ bool stm32_h7xx_otghs::connect()
 bool stm32_h7xx_otghs::disconnect()
 {
 	Register_util::set_bits(&OTGD->DCTL, USB_OTG_DCTL_SDIS);
-	Register_util::clear_bits(&OTG->GCCFG, USB_OTG_GCCFG_PWRDWN);
 
 	//flush
 	Cortex_m7::data_instruction_sync();
