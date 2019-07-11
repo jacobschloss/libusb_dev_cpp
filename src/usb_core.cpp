@@ -629,7 +629,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 				}
 				case USB_common::DESCRIPTOR_TYPE::CONFIGURATION:
 				{
-					Config_desc_table::Config_desc_const_ptr config_desc = m_desc_table->get_config_descriptor(desc_index + 1);
+					Config_desc_table::Config_desc_const_ptr config_desc = m_desc_table->get_config_descriptor(desc_index);
 					if(!config_desc)
 					{
 						r = USB_common::USB_RESP::FAIL;
