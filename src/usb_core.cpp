@@ -41,6 +41,9 @@ bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size, 
 	m_rx_buffer = rx_buf;
 	m_rx_buffer.reset();
 
+	m_set_config_callback_ctx = nullptr;
+	m_set_config_callback_func = nullptr;
+
 	return true;
 }
 
@@ -850,31 +853,43 @@ USB_common::USB_RESP USB_core::handle_std_ep_request(Setup_packet* const req)
 
 bool USB_core::set_configuration(const uint8_t bConfigurationValue)
 {
-	m_configuration = bConfigurationValue;
+	bool ret = false;
 
-	//TODO move this to a child or callback
+	if(m_set_config_callback_func)
 	{
-		usb_driver_base::ep_cfg ep1;
-		ep1.num = 0x01;
-		ep1.size = 512;
-		ep1.type = usb_driver_base::EP_TYPE::BULK;
-		m_driver->ep_config(ep1);
+		if(m_set_config_callback_func(m_set_config_callback_ctx, bConfigurationValue))
+		{
+			m_configuration = bConfigurationValue;
+			ret = true;
+
+			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::set_configuration", "Config set to %d ok", m_configuration);
+		}
+		else
+		{
+			uart1_log<64>(LOG_LEVEL::ERROR, "USB_core::set_configuration", "Config set to %d failed, trying to set config to 0", bConfigurationValue);
+			
+			if(m_set_config_callback_func(m_set_config_callback_ctx, 0))
+			{
+				m_configuration = 0;
+				ret = true;
+
+				uart1_log<64>(LOG_LEVEL::ERROR, "USB_core::set_configuration", "Config set to %d ok", m_configuration);
+			}
+			else
+			{
+				uart1_log<64>(LOG_LEVEL::FATAL, "USB_core::set_configuration", "Could not set configuration to 0");
+			}
+
+			ret = false;
+		}
 	}
+	else
 	{
-		usb_driver_base::ep_cfg ep2;
-		ep2.num = 0x80 | 0x01;
-		ep2.size = 512;
-		ep2.type = usb_driver_base::EP_TYPE::BULK;
-		m_driver->ep_config(ep2);
+		uart1_log<64>(LOG_LEVEL::FATAL, "USB_core::set_configuration", "No set configuration handler registered, can't configure");
+		ret = false;
 	}
-	{
-		usb_driver_base::ep_cfg ep3;
-		ep3.num = 0x80 | 0x02;
-		ep3.size = 8;
-		ep3.type = usb_driver_base::EP_TYPE::INTERRUPT;
-		m_driver->ep_config(ep3);
-	}
-	return true;
+
+	return ret;
 }
 bool USB_core::get_configuration(uint8_t* const bConfigurationValue)
 {

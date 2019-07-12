@@ -20,6 +20,8 @@ class USB_core
 {
 public:
 
+	typedef std::function<bool (void*, const uint16_t)> SetConfigurationCallback;
+
 	enum class USB_CMD
 	{
 		ENABLE,
@@ -38,6 +40,11 @@ public:
 
 	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter& tx_buf, const Buffer_adapter& rx_buf);
 	void set_descriptor_table(Descriptor_table* const desc_table);
+	void set_config_callback(const SetConfigurationCallback& callback, void* ctx)
+	{
+		m_set_config_callback_func = callback;
+		m_set_config_callback_ctx = ctx;
+	}
 	
 	//poll driver
 	bool poll_driver();
@@ -51,13 +58,10 @@ public:
 	bool connect();
 	bool disconnect();
 
-	void config_ep();
-	void deconfig_ep();
-
-	int32_t ep_write();
-	int32_t ep_read();
-	int32_t ep_stall();
-	int32_t ep_unstall();
+	usb_driver_base* get_driver()
+	{
+		return m_driver;
+	}
 
 protected:
 
@@ -132,5 +136,9 @@ protected:
 	uint8_t m_address;
 	uint8_t m_configuration;
 
+	//user data
 	Descriptor_table* m_desc_table;
+
+	void* m_set_config_callback_ctx;
+	SetConfigurationCallback m_set_config_callback_func;
 };

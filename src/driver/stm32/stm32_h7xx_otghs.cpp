@@ -436,12 +436,24 @@ bool stm32_h7xx_otghs::ep_config(const ep_cfg& ep)
 		{
 			case usb_driver_base::EP_TYPE::ISOCHRONUS:
 			{
-				return false;
+				ep_in->DIEPCTL = 
+					USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
+					USB_OTG_DIEPCTL_SNAK                      | 
+					_VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, ep_addr) | 
+					_VAL2FLD(USB_OTG_DIEPCTL_EPTYP, 0x01)     | 
+					USB_OTG_DIEPCTL_USBAEP                    | 
+					_VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, ep.size);
 				break;
 			}
 			case usb_driver_base::EP_TYPE::INTERRUPT:
 			{
-				return false;
+				ep_in->DIEPCTL = 
+					USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
+					USB_OTG_DIEPCTL_SNAK                      | 
+					_VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, ep_addr) | 
+					_VAL2FLD(USB_OTG_DIEPCTL_EPTYP, 0x03)     | 
+					USB_OTG_DIEPCTL_USBAEP                    | 
+					_VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, ep.size);
 				break;
 			}
 			case usb_driver_base::EP_TYPE::BULK:
@@ -468,12 +480,24 @@ bool stm32_h7xx_otghs::ep_config(const ep_cfg& ep)
 		{
 			case usb_driver_base::EP_TYPE::ISOCHRONUS:
 			{
-				return false;
+				ep_out->DOEPCTL = 
+					USB_OTG_DOEPCTL_EPENA                     |
+					USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
+					USB_OTG_DIEPCTL_CNAK                      | 
+					_VAL2FLD(USB_OTG_DOEPCTL_EPTYP, 0x01)     | 
+					USB_OTG_DIEPCTL_USBAEP                    | 
+					_VAL2FLD(USB_OTG_DOEPCTL_MPSIZ, ep.size);
 				break;
 			}
 			case usb_driver_base::EP_TYPE::INTERRUPT:
 			{
-				return false;
+				ep_out->DOEPCTL = 
+					USB_OTG_DOEPCTL_EPENA                     |
+					USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
+					USB_OTG_DIEPCTL_CNAK                      | 
+					_VAL2FLD(USB_OTG_DOEPCTL_EPTYP, 0x03)     | 
+					USB_OTG_DIEPCTL_USBAEP                    | 
+					_VAL2FLD(USB_OTG_DOEPCTL_MPSIZ, ep.size);
 				break;
 			}
 			case usb_driver_base::EP_TYPE::BULK:
