@@ -157,3 +157,4 @@ public:
 	uint16_t wLength;
 	std::array<uint8_t, DATALEN> Data;
 };
+}
