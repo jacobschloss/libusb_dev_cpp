@@ -8,6 +8,8 @@
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 
+#include "common_util/Intrusive_list.hpp"
+
 #include <array>
 
 #include <cstdint>
