@@ -7,7 +7,6 @@ add_library(usb_dev_cpp
 
 	src/class/cdc/cdc.cpp
 	src/class/cdc/cdc_desc.cpp
-	src/class/cdc/cdc_usb.cpp
 	src/class/cdc/cdc_mgmt_requests.cpp
 
 	src/class/dfu/dfu.cpp
@@ -35,6 +34,8 @@ add_library(usb_dev_cpp_stm32
 	src/class/cdc/cdc_usb.cpp
 	src/driver/stm32/stm32_h7xx_otghs.cpp
 	src/usb_core.cpp
+	
+	src/class/cdc/cdc_usb.cpp
 )
 
 target_include_directories(usb_dev_cpp PUBLIC
