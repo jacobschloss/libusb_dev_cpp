@@ -47,6 +47,8 @@ target_link_libraries(usb_dev_cpp
 )
 
 target_link_libraries(usb_dev_cpp_stm32
+	usb_dev_cpp
+
 	freertos_cpp_util
 	stm32h7xx_cmsis
 )
