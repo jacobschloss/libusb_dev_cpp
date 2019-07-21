@@ -157,14 +157,3 @@ public:
 	uint16_t wLength;
 	std::array<uint8_t, DATALEN> Data;
 };
-
-class CDC_line_coding
-{
-public:
-	uint32_t dwDTERate;
-	uint8_t bCharFormat;
-	uint8_t bParityType;
-	uint8_t bDataBits;
-};
-
-}
