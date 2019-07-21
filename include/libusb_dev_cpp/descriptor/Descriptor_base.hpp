@@ -8,7 +8,7 @@
 
 #include "libusb_dev_cpp/util/Buffer_adapter.hpp"
 
-#include "freertos_cpp_util/util/Intrusive_list.hpp"
+#include "common_util/Intrusive_list.hpp"
 
 #include <memory>
 

@@ -55,7 +55,7 @@ size_t String_descriptor_base::size() const
 			}
 		}
 	}
-	return std::min(len, 254U);
+	return std::min<size_t>(len, 254U);
 }
 
 
