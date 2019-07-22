@@ -50,7 +50,7 @@ target_link_libraries(usb_dev_cpp_stm32
 	usb_dev_cpp
 
 	freertos_cpp_util
-	stm32h7xx_cmsis
+	stm32h750xx_cmsis
 )
 
 if(${BUILD_USB_DEV_CPP_TESTS})
