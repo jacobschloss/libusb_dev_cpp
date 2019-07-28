@@ -11,6 +11,7 @@
 #include "libusb_dev_cpp/core/Setup_packet.hpp"
 
 #include "libusb_dev_cpp/util/Buffer_adapter.hpp"
+#include "libusb_dev_cpp/util/EP_buffer_mgr_base.hpp"
 
 #include <cstdint>
 #include <cstddef>
@@ -153,7 +154,35 @@ public:
 
 	virtual const Setup_packet::Setup_packet_array* get_last_setup_packet() const = 0;
 
-	virtual const Buffer_adapter_base* get_last_data_packet() const = 0;
+	void set_ep0_buffer(EP_buffer_mgr_base* const ep0_buffer)
+	{
+		m_ep0_buffer = ep0_buffer;
+	}
+
+	EP_buffer_mgr_base* get_ep0_buffer()
+	{
+		return m_ep0_buffer;
+	}
+
+	void set_tx_buffer(EP_buffer_mgr_base* const tx_buffer)
+	{
+		m_tx_buffer = tx_buffer;
+	}
+
+	EP_buffer_mgr_base* get_tx_buffer()
+	{
+		return m_tx_buffer;
+	}
+
+	void set_rx_buffer(EP_buffer_mgr_base* const rx_buffer)
+	{
+		m_rx_buffer = rx_buffer;
+	}
+
+	EP_buffer_mgr_base* get_rx_buffer()
+	{
+		return m_rx_buffer;
+	}
 
 	//application waits for a buffer with data
 	//this might be better as a stream thing rather than buffer exchange
@@ -167,6 +196,10 @@ public:
 	virtual bool enqueue_tx_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 
 protected:
+
+	EP_buffer_mgr_base* m_ep0_buffer;
+	EP_buffer_mgr_base* m_tx_buffer;
+	EP_buffer_mgr_base* m_rx_buffer;
 
 	std::array<USB_common::Event_callback, USB_common::USB_EVENTS_MAX> m_event_callbacks;
 	std::array<USB_common::Event_callback, 8>                          m_ep_rx_callbacks;

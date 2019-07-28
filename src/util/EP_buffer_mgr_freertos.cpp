@@ -4,4 +4,4 @@
  * @license Licensed under the 3-Clause BSD license. See LICENSE for details
 */
 
-#include "libusb_dev_cpp/util/EP_buffer_mgr.hpp"
+#include "libusb_dev_cpp/util/EP_buffer_mgr_freertos.hpp"

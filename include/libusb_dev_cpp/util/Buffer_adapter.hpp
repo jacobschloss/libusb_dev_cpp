@@ -28,13 +28,6 @@ public:
 
 	}
 
-	void clear()
-	{
-		m_buf_ptr  = nullptr;
-		m_buf_max  = 0;
-		m_buf_size = 0;
-	}
-
 	void reset()
 	{
 		m_buf_size  = 0;	
@@ -92,6 +85,14 @@ public:
 	}
 
 protected:
+	
+	void clear()
+	{
+		m_buf_ptr  = nullptr;
+		m_buf_max  = 0;
+		m_buf_size = 0;
+	}
+
 	uint8_t* m_buf_ptr;
 	size_t m_buf_max;
 	size_t m_buf_size;
@@ -103,13 +104,6 @@ public:
 	Buffer_adapter()
 	{
 		clear();
-	}
-
-	void clear()
-	{
-		Buffer_adapter_base::clear();
-		curr_ptr = nullptr;
-		rem_len  = 0;
 	}
 
 	void reset()
@@ -145,4 +139,13 @@ public:
 
 	//remaining length
 	size_t   rem_len;
+
+protected:
+
+	void clear()
+	{
+		Buffer_adapter_base::clear();
+		curr_ptr = nullptr;
+		rem_len  = 0;
+	}
 };

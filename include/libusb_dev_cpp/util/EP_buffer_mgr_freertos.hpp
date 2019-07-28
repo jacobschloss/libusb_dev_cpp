@@ -6,55 +6,10 @@
 
 #pragma once
 
-#include "libusb_dev_cpp/util/Buffer_adapter.hpp"
-
 #include "freertos_cpp_util/object_pool/Object_pool.hpp"
 
-template <size_t LEN, size_t ALLIGN>
-class EP_buffer_array : public Buffer_adapter_base
-{
-public:
-
-	EP_buffer_array() : Buffer_adapter_base(m_buf.data(), m_buf.size())
-	{
-
-	}
-
-protected:
-	alignas(ALLIGN) std::array<uint8_t, LEN> m_buf;
-};
-
-class EP_buffer_mgr_base
-{
-public:
-
-	virtual ~EP_buffer_mgr_base()
-	{
-		
-	}
-
-	//both
-	virtual size_t get_num_ep() const = 0;
-	virtual bool set_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
-	virtual Buffer_adapter_base* get_buffer(const uint8_t ep) = 0;
-
-	
-	virtual Buffer_adapter_base* poll_allocate_buffer_isr(const uint8_t ep) = 0;
-	virtual Buffer_adapter_base* poll_allocate_buffer(const uint8_t ep) = 0;
-	virtual Buffer_adapter_base* wait_allocate_buffer(const uint8_t ep) = 0;
-	
-	virtual bool poll_enqueue_buffer_isr(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
-	virtual bool poll_enqueue_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
-	
-	virtual Buffer_adapter_base* poll_dequeue_buffer_isr(const uint8_t ep) = 0;
-	virtual Buffer_adapter_base* poll_dequeue_buffer(const uint8_t ep) = 0;
-	virtual Buffer_adapter_base* wait_dequeue_buffer(const uint8_t ep) = 0;
-
-	virtual void release_buffer_isr(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
-	virtual void release_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
-
-protected:
-};
+#include "libusb_dev_cpp/util/EP_buffer_array.hpp"
+#include "libusb_dev_cpp/util/EP_buffer_mgr_base.hpp"
 
 template<size_t NUM_EP, size_t BUFFER_DEPTH, size_t BUFFER_LEN, size_t BUFFER_ALLIGN>
 class EP_buffer_mgr_freertos : public EP_buffer_mgr_base

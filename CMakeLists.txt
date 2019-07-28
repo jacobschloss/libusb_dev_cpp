@@ -22,20 +22,21 @@ add_library(usb_dev_cpp
 	src/util/Config_desc_table.cpp
 	src/util/Iface_desc_table.cpp
 	src/util/String_desc_table.cpp
-
 	src/util/Descriptor_table.cpp
+
+	src/util/EP_buffer_array.cpp
+	src/util/EP_buffer_mgr_base.cpp
 )
 
 add_library(usb_dev_cpp_stm32
-	src/util/EP_buffer_mgr.cpp
 
 	src/driver/cpu/Cortex_m7.cpp
 
 	src/class/cdc/cdc_usb.cpp
 	src/driver/stm32/stm32_h7xx_otghs.cpp
 	src/usb_core.cpp
-	
-	src/class/cdc/cdc_usb.cpp
+
+	src/util/EP_buffer_mgr_freertos.cpp
 )
 
 target_include_directories(usb_dev_cpp PUBLIC

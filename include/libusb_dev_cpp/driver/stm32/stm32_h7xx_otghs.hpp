@@ -8,9 +8,6 @@
 
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
-#include "libusb_dev_cpp/util/EP_buffer_mgr.hpp"
-
-
 class stm32_h7xx_otghs : public usb_driver_base
 {
 public:
@@ -56,21 +53,6 @@ public:
 		return &m_last_setup_packet;
 	}
 
-	const Buffer_adapter_base* get_last_data_packet() const override
-	{
-		return &m_last_ep0_data_packet;
-	}
-
-	void set_tx_buffer(EP_buffer_mgr_base* const tx_buffer)
-	{
-		m_tx_buffer = tx_buffer;
-	}
-
-	void set_rx_buffer(EP_buffer_mgr_base* const rx_buffer)
-	{
-		m_rx_buffer = rx_buffer;
-	}
-
 	//application waits for a buffer with data
 	//this might be better as a stream thing rather than buffer exchange
 	Buffer_adapter_base* wait_rx_buffer(const uint8_t ep) override;
@@ -105,11 +87,5 @@ protected:
 	std::array<ep_cfg, MAX_NUM_EP> m_tx_ep_cfg;
 
 	Setup_packet::Setup_packet_array m_last_setup_packet;
-	EP_buffer_array<64, 32> m_last_ep0_data_packet;
-
-	// EP_buffer_mgr_freertos<1, 64, 32> m_ep0_buffer;
-	EP_buffer_mgr_base* m_tx_buffer;
-	EP_buffer_mgr_base* m_rx_buffer;
-	// EP_buffer_mgr_freertos<2, 2, 512, 32> m_tx_buffer;
-	// EP_buffer_mgr_freertos<2, 2, 512, 32> m_rx_buffer;
+	
 };

@@ -13,6 +13,7 @@
 
 #include "libusb_dev_cpp/util/Descriptor_table.hpp"
 #include "libusb_dev_cpp/util/Buffer_adapter.hpp"
+#include "libusb_dev_cpp/util/EP_buffer_mgr_base.hpp"
 
 #include "freertos_cpp_util/Queue_static_pod.hpp"
 
