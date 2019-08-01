@@ -297,25 +297,41 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::RXDATA:
 		{
-			const Buffer_adapter_base* packet = m_driver->get_last_data_packet();
+			EP_buffer_mgr_base* ep0_buf_mgr = m_driver->get_ep0_buffer();
 
-			size_t to_copy = std::min(packet->size(), m_rx_buffer.rem_len);
-			std::copy_n(packet->data(), to_copy, m_rx_buffer.curr_ptr);
-
-			if(m_rx_buffer.rem_len < packet->size())
+			Buffer_adapter_base* ep0_buf = ep0_buf_mgr->poll_dequeue_buffer(0);
+			if(ep0_buf)
 			{
-				//we got too much data, that is weird
-				stall_control_ep(ep);
-				return;
-			}
-			else if(m_rx_buffer.rem_len != packet->size())
-			{
-				//keep reading
-				m_rx_buffer.curr_ptr += packet->size();
-				m_rx_buffer.rem_len -= packet->size();
+				if(m_rx_buffer.rem_len < ep0_buf->size())
+				{
+					//we got too much data, that is weird
+					stall_control_ep(ep);
+				
+					//release ep buffer
+					ep0_buf_mgr->release_buffer(0, ep0_buf);
+					ep0_buf = nullptr;
 
-				//skip evt processing
-				return;
+					return;
+				}
+
+				//copy
+				size_t to_copy = std::min(ep0_buf->size(), m_rx_buffer.rem_len);
+				std::copy_n(ep0_buf->data(), to_copy, m_rx_buffer.curr_ptr);
+
+				//update buffer
+				m_rx_buffer.curr_ptr += to_copy;
+				m_rx_buffer.rem_len -= to_copy;
+
+				//release ep buffer
+				ep0_buf_mgr->release_buffer(0, ep0_buf);
+				ep0_buf = nullptr;
+
+				if(m_rx_buffer.rem_len > 0)
+				{
+					//keep reading
+					//skip evt processing
+					return;
+				}
 			}
 			break;
 		}

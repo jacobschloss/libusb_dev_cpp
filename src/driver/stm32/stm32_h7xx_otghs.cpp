@@ -169,6 +169,24 @@ bool stm32_h7xx_otghs::initialize()
 		uart1_log<64>(LOG_LEVEL::FATAL, "stm32_h7xx_otghs::initialize", "m_rx_buffer is null");
 	}
 
+	{
+		Buffer_adapter_base* rx_buf = m_ep0_buffer->poll_allocate_buffer(0);
+		if(rx_buf == nullptr)
+		{
+			Buffer_adapter_base* buf = m_ep0_buffer->get_buffer(0);
+			if(buf)
+			{
+				m_ep0_buffer->release_buffer(0, buf);
+			}
+
+			uart1_log<64>(LOG_LEVEL::FATAL, "stm32_h7xx_otghs::initialize", "could not preallocate rx buffer for ep 0");
+
+			return false;
+		}
+
+		m_ep0_buffer->set_buffer(0, rx_buf);
+	}
+
 	for(size_t i = 0; i < m_rx_buffer->get_num_ep(); i++)
 	{
 		Buffer_adapter_base* rx_buf = m_rx_buffer->poll_allocate_buffer(i);
@@ -183,7 +201,7 @@ bool stm32_h7xx_otghs::initialize()
 				}
 			}
 
-			uart1_log<64>(LOG_LEVEL::FATAL, "stm32_h7xx_otghs::initialize", "could not preallocate buffer for ep %d", i);
+			uart1_log<64>(LOG_LEVEL::FATAL, "stm32_h7xx_otghs::initialize", "could not preallocate rx buffer for ep %d", i+1);
 
 			return false;
 		}
@@ -683,10 +701,14 @@ int stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint1
 		return -1;
 	}
 
+	uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs::ep_write", "ep%d", ep_addr);
+	for(size_t i = 0; i < len; i++)
+	{
+		uart1_printf<16>("%02X ", buf[i]);
+	}
+
 	if(ep_addr == 0)
 	{
-		uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs::ep_write", "ep0");
-
 		Register_util::mask_set_bits(
 							&epin->DIEPTSIZ,
 							USB_OTG_DIEPTSIZ_PKTCNT | USB_OTG_DIEPTSIZ_XFRSIZ,
@@ -699,7 +721,6 @@ int stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint1
 	}
 	else
 	{
-
 		if(epin->DIEPCTL & USB_OTG_DOEPCTL_EPENA)
 		{
 			//endpoint already active
@@ -1147,12 +1168,38 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 					}
 					else
 					{
-						m_last_ep0_data_packet.resize(BCNT);
-						ep_read(ep_num, m_last_ep0_data_packet.data(), BCNT);	
-	
+						//get active buffer
+						Buffer_adapter_base* curr_buf = m_ep0_buffer->get_buffer(0);
+
+						//read data from core's fifo into buffer
+						curr_buf->reset();
+						curr_buf->resize(BCNT);
+						ep_read(0, curr_buf->data(), BCNT);
+
+						//enqueue buffer so the application thread can be notified and read it
+						m_ep0_buffer->poll_enqueue_buffer(0, curr_buf);
+
 						for(size_t i = 0; i < BCNT; i++)
 						{
-							uart1_printf<16>("%02X ", m_last_ep0_data_packet.data()[i]);
+							uart1_printf<16>("%02X ", curr_buf->data()[i]);
+						}
+
+						//try to get a new buffer
+						Buffer_adapter_base* new_buf = m_ep0_buffer->poll_allocate_buffer(0);
+						//update the active buffer
+						if(new_buf)
+						{
+							new_buf->reset();
+							m_ep0_buffer->set_buffer(0, new_buf);
+							get_ep_out(0)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+						}
+						else
+						{
+							//OUT buffer underrun
+							//we will need to cnak and epena when the app frees a buffer
+							uart1_log<64>(LOG_LEVEL::ERROR, "USB_OTG_GINTSTS_RXFLVL", "rx buffer allocation fail");
+							m_ep0_buffer->set_buffer(0, nullptr);
+							get_ep_out(0)->DOEPCTL |= (USB_OTG_DOEPCTL_SNAK);
 						}
 					}
 
