@@ -121,6 +121,15 @@ public:
 	constexpr static uint8_t bDescriptorSubType = static_cast<uint8_t>(FUNC_DESCRIPTOR_TYPE::ACM);
 	uint8_t bmCapabilities;
 
+	/*
+	enum class Capabilities : uint8_t
+	{
+		Network_Connection,
+		Send_Break,
+		Comm_Feature
+	}
+	*/
+
 	static_assert(std::tuple_size<CDC_acm_descriptor_array>::value == bFunctionLength);
 };
 
