@@ -1141,7 +1141,14 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 						ep_read(ep_num, curr_buf->data(), BCNT);
 
 						//enqueue buffer so the application thread can be notified and read it
-						m_rx_buffer->poll_enqueue_buffer(ep_num, curr_buf);
+						if(m_rx_buffer->poll_enqueue_buffer(ep_num, curr_buf))
+						{
+							uart1_log<128>(LOG_LEVEL::TRACE, "USB_OTG_GINTSTS_RXFLVL PKTSTS 2", "rx buffer poll_enqueue_buffer ok");
+						}
+						else
+						{
+							uart1_log<128>(LOG_LEVEL::ERROR, "USB_OTG_GINTSTS_RXFLVL PKTSTS 2", "rx buffer poll_enqueue_buffer fail");
+						}
 
 						for(size_t i = 0; i < BCNT; i++)
 						{
