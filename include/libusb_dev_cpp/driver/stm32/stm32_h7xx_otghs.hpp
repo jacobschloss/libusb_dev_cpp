@@ -87,5 +87,4 @@ protected:
 	std::array<ep_cfg, MAX_NUM_EP> m_tx_ep_cfg;
 
 	Setup_packet::Setup_packet_array m_last_setup_packet;
-	
 };

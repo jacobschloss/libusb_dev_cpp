@@ -44,6 +44,8 @@ bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size, 
 	m_set_config_callback_ctx = nullptr;
 	m_set_config_callback_func = nullptr;
 
+	m_usb_core_handle_event = std::bind(&USB_core::handle_event, this, std::placeholders::_1, std::placeholders::_2);
+
 	return true;
 }
 
@@ -54,7 +56,7 @@ void USB_core::set_descriptor_table(Descriptor_table* const desc_table)
 
 bool USB_core::poll_driver()
 {
-	m_driver->poll(std::bind(&USB_core::handle_event, this, std::placeholders::_1, std::placeholders::_2));
+	m_driver->poll(m_usb_core_handle_event);
 	return true;
 }
 
@@ -194,9 +196,21 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 	usb_core_event core_evt;
 	core_evt.event = evt;
 	core_evt.ep = ep;
-	m_event_queue.push_back(core_evt);
 
-	return true;
+	bool ret = false;
+
+	//verify if this is really an interrupt
+	//in some cases eg the USB library will have a code path that is optionally polled or ISR
+	if(xPortIsInsideInterrupt() == pdFALSE)
+	{
+		ret = m_event_queue.push_back(core_evt);
+	}
+	else
+	{
+		ret = m_event_queue.push_back_isr(core_evt);
+	}
+
+	return ret;
 }
 
 bool USB_core::handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep)
@@ -216,7 +230,7 @@ bool USB_core::handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_
 	return true;
 }
 
-void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep)
+bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
 	switch(m_control_state)
 	{
@@ -228,13 +242,13 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 			m_setup_packet = Setup_packet();
 			if(!m_setup_packet.deserialize(*setup_packet_array))
 			{
-				return;
+				return false;
 			}
 
 			Request_type req_type;
 			if(!m_setup_packet.get_request_type(&req_type))
 			{
-				return;
+				return false;
 			}
 
 			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "setup_packet.bmRequestType: 0x%02X",
@@ -271,7 +285,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 				if(m_setup_packet.wLength > m_rx_buffer.max_size())
 				{
 					stall_control_ep(ep);
-					return;
+					return true;
 				}
 
 				//we have additional host->dev data, so advance the state machine to wait for the data
@@ -285,7 +299,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 				//don't process the event yet, we need to read more
 				//there might be host->dev data coming
 				//processing will continue on the next read event
-				return;
+				return true;
 			}
 			else
 			{
@@ -311,7 +325,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 					ep0_buf_mgr->release_buffer(0, ep0_buf);
 					ep0_buf = nullptr;
 
-					return;
+					return true;
 				}
 
 				//copy
@@ -330,7 +344,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 				{
 					//keep reading
 					//skip evt processing
-					return;
+					return true;
 				}
 			}
 			break;
@@ -345,7 +359,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 			{
 				m_setup_complete_callback();
 			}
-			return;
+			return true;
 		}
 		default:
 		{
@@ -359,7 +373,7 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 	if(!m_setup_packet.get_request_type(&req_type))
 	{
 		//FAIL
-		return;
+		return false;
 	}
 
 	switch(process_request(&m_setup_packet))
@@ -406,8 +420,9 @@ void USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 	}
 	
+	return true;
 }
-void USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep)
+bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep)
 {
 	switch(m_control_state)
 	{
@@ -475,7 +490,7 @@ void USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 			{
 				m_setup_complete_callback();
 			}
-			return;
+			return true;
 		}
 		default:
 		{
@@ -483,6 +498,8 @@ void USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 			break;
 		}
 	}
+
+	return true;
 }
 
 USB_common::USB_RESP USB_core::process_request(Setup_packet* const req)

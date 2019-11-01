@@ -67,6 +67,13 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 			return nullptr;
 		}
 
+		//verify if this is really an interrupt
+		//in some cases eg the USB library will have a code path that is optionally polled or ISR
+		if(xPortIsInsideInterrupt() == pdTRUE)
+		{
+			return poll_allocate_buffer_isr(ep);
+		}
+
 		return m_ep_buffer[ep].allocate();
 	}
 	Buffer_adapter_base* wait_allocate_buffer(const uint8_t ep) override
@@ -122,6 +129,13 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 			return false;
 		}
 
+		//verify if this is really an interrupt
+		//in some cases eg the USB library will have a code path that is optionally polled or ISR
+		if(xPortIsInsideInterrupt() == pdTRUE)
+		{
+			return poll_enqueue_buffer_isr(ep, buf);
+		}
+
 		// EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = dynamic_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
 		EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* ptr = static_cast< EP_buffer_array<BUFFER_LEN, BUFFER_ALLIGN>* >(buf);
 		if(ptr == nullptr)
@@ -146,6 +160,13 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 	}
 	Buffer_adapter_base* poll_dequeue_buffer(const uint8_t ep) override
 	{
+		//verify if this is really an interrupt
+		//in some cases eg the USB library will have a code path that is optionally polled or ISR
+		if(xPortIsInsideInterrupt() == pdTRUE)
+		{
+			return poll_dequeue_buffer_isr(ep);
+		}
+
 		return wait_dequeue_buffer(ep, 0);
 	}
 	Buffer_adapter_base* wait_dequeue_buffer(const uint8_t ep) override
@@ -175,6 +196,14 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 		if(ep > NUM_EP)
 		{
 			//throw? log?
+			return;
+		}
+
+		//verify if this is really an interrupt
+		//in some cases eg the USB library will have a code path that is optionally polled or ISR
+		if(xPortIsInsideInterrupt() == pdTRUE)
+		{
+			release_buffer_isr(ep, buf);
 			return;
 		}
 

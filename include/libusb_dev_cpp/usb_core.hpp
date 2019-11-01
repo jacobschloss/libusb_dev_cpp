@@ -71,8 +71,8 @@ protected:
 	bool handle_reset();
 
 	bool handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep);
-	void handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
-	void handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	bool handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);
+	bool handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t ep);
 
 	virtual USB_common::USB_RESP process_request(Setup_packet* const req);
 
@@ -142,4 +142,6 @@ protected:
 
 	void* m_set_config_callback_ctx;
 	SetConfigurationCallback m_set_config_callback_func;
+
+	USB_common::Event_callback m_usb_core_handle_event;
 };
