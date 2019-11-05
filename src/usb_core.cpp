@@ -90,6 +90,11 @@ void USB_core::set_address(const uint8_t addr)
 
 bool USB_core::handle_reset()
 {
+	return true;
+}
+
+bool USB_core::handle_enum_done()
+{
 	set_address(0);
 
 	m_setup_complete_callback = nullptr;
@@ -110,12 +115,7 @@ bool USB_core::handle_reset()
 	m_driver->set_ep_rx_callback(0x00, std::bind(&USB_core::handle_ep0_rx, this, std::placeholders::_1, std::placeholders::_2));
 	m_driver->set_ep_tx_callback(0x00, std::bind(&USB_core::handle_ep0_tx, this, std::placeholders::_1, std::placeholders::_2));
 	m_driver->set_ep_setup_callback(0x00, std::bind(&USB_core::handle_ep0_setup, this, std::placeholders::_1, std::placeholders::_2));
-
-	return true;
-}
-
-bool USB_core::handle_enum_done()
-{
+	
 	return true;
 }
 

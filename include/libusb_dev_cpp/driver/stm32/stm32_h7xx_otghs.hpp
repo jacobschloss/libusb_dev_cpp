@@ -68,6 +68,9 @@ protected:
 
 	void set_data0(const uint8_t ep) override;
 
+	bool handle_iepintx(USB_common::USB_EVENTS* const out_event, uint8_t* const out_ep_num);
+	bool handle_oepintx(USB_common::USB_EVENTS* const out_event, uint8_t* const out_ep_num);
+
 	void flush_rx();
 	void flush_tx(const uint8_t ep);
 	void flush_all_tx();

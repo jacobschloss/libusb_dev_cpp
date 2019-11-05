@@ -18,16 +18,16 @@ public:
 
 	enum class USB_EVENTS
 	{
-		RESET,
-		SOF,
 		EARLY_SUSPEND,
 		SUSPEND,
+		RESET,
 		ENUM_DONE,
-		WAKEUP,
-		EP_RX,
-		EP_TX,
 		CTRL_SETUP_PHASE_DONE,
 		CTRL_DATA_PHASE_DONE,
+		EP_RX,
+		EP_TX,
+		WAKEUP,
+		SOF,
 		NONE
 	};
 	static constexpr size_t USB_EVENTS_MAX = 8;
