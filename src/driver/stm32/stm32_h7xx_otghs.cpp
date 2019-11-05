@@ -885,7 +885,6 @@ USB_common::USB_SPEED stm32_h7xx_otghs::get_speed() const
 	}
 }
 
-#if 1
 void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 {
 	// for(;;)
@@ -966,168 +965,17 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_IEPINT)
 	{
-		handle_iepintx(&event, &ep_num);
-
-		/*
-		const uint32_t IEPINT = _FLD2VAL(USB_OTG_DAINT_IEPINT, OTGD->DAINT);
-
-		if(IEPINT != 0)
+		if(!handle_iepintx(&event, &ep_num))
 		{
-			ep_num = __builtin_ctz(IEPINT);
-			const uint32_t DIEPINT = get_ep_in(ep_num)->DIEPINT;
-
-			if(DIEPINT & USB_OTG_DIEPINT_XFRC)
-			{
-				//transfer complete
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_XFRC;
-				
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_IEPINT DIEPINT[%d] XFRC 0x%08X", ep_num, DIEPINT);
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_IEPINT event EP_TX");
-
-				{
-					Buffer_adapter_base* const curr_tx_buf = m_tx_buffer->get_buffer(ep_num);
-					if(curr_tx_buf)
-					{
-						m_tx_buffer->release_buffer(ep_num, curr_tx_buf);
-					}
-				}
-
-				//see if there is a new packet to enqueue
-				Buffer_adapter_base* const new_tx_buf = m_tx_buffer->poll_dequeue_buffer(ep_num);
-				if(new_tx_buf)
-				{
-					m_tx_buffer->set_buffer(ep_num, new_tx_buf);
-					ep_write(0x80 | ep_num, new_tx_buf->data(), new_tx_buf->size());
-				}
-				else
-				{
-					m_tx_buffer->set_buffer(ep_num, nullptr);
-					get_ep_in(ep_num)->DIEPCTL |= (USB_OTG_DOEPCTL_SNAK);
-				}
-
-				event = USB_common::USB_EVENTS::EP_TX;
-				ep_num = ep_num | 0x80;
-			}
-			else if(DIEPINT & USB_OTG_DIEPINT_NAK)
-			{
-				//NAK tx or rx
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_NAK;
-			}
-			else if(DIEPINT & USB_OTG_DIEPINT_PKTDRPSTS)
-			{
-				//isoc out packet dropped
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_PKTDRPSTS;
-			}
-			else if(DIEPINT & USB_OTG_DIEPINT_TXFIFOUDRN)
-			{
-				//tx fifo underrun
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_TXFIFOUDRN;
-			}
-			else if(DIEPINT & USB_OTG_DIEPINT_INEPNE)
-			{
-				//IN token received with EP mismatch
-				//Data on top of non periodic txfifo is for ep other than for in token
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_INEPNE;
-			}
-			else if(DIEPINT & USB_OTG_DIEPINT_ITTXFE)
-			{
-				//IN token received when Tx FIFO is empty
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_ITTXFE;
-			}
-			else if(DIEPINT & USB_OTG_DIEPINT_TOC)
-			{
-				//Timeout condition
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_IEPINT DIEPINT[%d] TOC 0x%08X", ep_num, DIEPINT);
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_TOC;
-			}
-			else if(DIEPINT & (1 << 2U))
-			{
-				//AHB bus error
-				get_ep_in(ep_num)->DIEPINT = 1 << 2U;
-			}
-			else if(DIEPINT & USB_OTG_DIEPINT_EPDISD)
-			{
-				//Endpoint disabled at app request
-				get_ep_in(ep_num)->DIEPINT = USB_OTG_DIEPINT_EPDISD;
-			}
-			else
-			{
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_IEPINT %d IEPINT  0x%08X",  ep_num, IEPINT);
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_IEPINT %d DIEPINT 0x%08X", ep_num, DIEPINT);
-			}
-
-			//USB_OTG_DIEPINT_TOC
-			//USB_OTG_DIEPINT_TXFE
-			//USB_OTG_DIEPINT_EPDISD
-			//USB_OTG_DIEPINT_ITTXFE
-			//USB_OTG_DIEPINT_INEPNE
-			//USB_OTG_DIEPINT_TXFIFOUDRN
-			//USB_OTG_DIEPINT_BNA
-			//USB_OTG_DIEPINT_PKTDRPSTS
-			//USB_OTG_DIEPINT_BERR
-			//USB_OTG_DIEPINT_NAK
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs", "handle_iepintx had an error");
 		}
-		*/
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_OEPINT)
 	{
-		handle_oepintx(&event, &ep_num);
-		/*
-		const uint32_t OEPINT = _FLD2VAL(USB_OTG_DAINT_OEPINT, OTGD->DAINT);
-
-		if(OEPINT != 0)
+		if(!handle_oepintx(&event, &ep_num))
 		{
-			ep_num = __builtin_ctz(OEPINT);
-			const uint32_t DOEPINT = get_ep_out(ep_num)->DOEPINT;
-
-			if(DOEPINT & USB_OTG_DOEPINT_XFRC)
-			{
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_OEPINT DOEPINT[%d] XFRC 0x%08X", ep_num, DOEPINT);
-
-				get_ep_out(ep_num)->DOEPINT = USB_OTG_DOEPINT_XFRC;
-
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_DOEPINT_XFRC event EP_RX");
-				event = USB_common::USB_EVENTS::EP_RX;
-			}
-			else if(DOEPINT & USB_OTG_DOEPINT_STUP)
-			{
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_OEPINT DOEPINT[%d] STUP 0x%08X", ep_num, DOEPINT);
-
-				get_ep_out(ep_num)->DOEPINT = USB_OTG_DOEPINT_STUP;
-
-				//SETUP phase done
-				//no more back to back setup packets
-				//decode the setup packet now
-
-				const uint32_t DOEPTSIZ = get_ep_out(ep_num)->DOEPTSIZ;
-
-				const uint32_t XFRSIZ  = _FLD2VAL(USB_OTG_DOEPTSIZ_XFRSIZ, DOEPTSIZ);
-				const uint32_t PKTCNT  = _FLD2VAL(USB_OTG_DOEPTSIZ_PKTCNT, DOEPTSIZ);
-				const uint32_t STUPCNT = _FLD2VAL(USB_OTG_DOEPTSIZ_STUPCNT, DOEPTSIZ);
-
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_DOEPINT_STUP XFRSIZ %08X", XFRSIZ);
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_DOEPINT_STUP PKTCNT %08X", PKTCNT);
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_DOEPINT_STUP STUPCNT %08X", STUPCNT);
-
-				event = USB_common::USB_EVENTS::CTRL_SETUP_PHASE_DONE;
-			}
-			else if(DOEPINT & USB_OTG_DOEPINT_OTEPSPR)
-			{
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_OEPINT DOEPINT[%d] OTEPSPR 0x%08X", ep_num, DOEPINT);
-
-				//Status phase received for control write
-
-				//we are now in status phase, send an ACK or stall for the status phase
-
-				event = USB_common::USB_EVENTS::CTRL_DATA_PHASE_DONE;
-			}
-			
-			//USB_OTG_DOEPINT_EPDISD//Endpoint disabled interrupt
-			//USB_OTG_DOEPINT_OTEPDIS//OUT token received when endpoint disabled
-			//USB_OTG_DOEPINT_B2BSTUP//Back-to-back SETUP packets received (more than 3)
-			//USB_OTG_DOEPINT_NYET//NYET response tx
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs", "handle_oepintx had an error");
 		}
-		*/
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_RXFLVL)
 	{
@@ -1297,177 +1145,13 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 		}
 	}
 
-	func(event, ep_num);
-}
-#else
-void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
-{
-	USB_common::USB_EVENTS event = USB_common::USB_EVENTS::RESET;
-	uint8_t ep = 0;
-
-
-	while(true)
+	//don't callback if there is nothing to do
+	//otherwise the usb core thread will wake
+	if(event != USB_common::USB_EVENTS::NONE)
 	{
-		const uint32_t GINTSTS = OTG->GINTSTS;
-
-		if(GINTSTS & USB_OTG_GINTSTS_USBRST)
-		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_USBRST");
-
-			OTG->GINTSTS = USB_OTG_GINTSTS_USBRST;
-
-			for(uint8_t i = 0; i <= MAX_NUM_EP; i++)
-			{
-				ep_unconfig(i);
-			}
-
-			flush_rx();
-
-			continue;
-		}
-		else if(GINTSTS & USB_OTG_GINTSTS_ENUMDNE)
-		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_ENUMDNE");
-
-			OTG->GINTSTS = USB_OTG_GINTSTS_ENUMDNE;
-
-			event = USB_common::USB_EVENTS::RESET;
-		}
-		else if(GINTSTS & USB_OTG_GINTSTS_IEPINT)
-		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_IEPINT");
-
-			// Could check this instead
-			// const uint32_t DAINT = OTGD->DAINT;
-
-			bool ret = false;
-			for(size_t i = 0; i <= MAX_NUM_EP; i++)
-			{
-				volatile USB_OTG_INEndpointTypeDef* epin = get_ep_in(i);
-				if(epin->DIEPINT & USB_OTG_DIEPINT_XFRC)
-				{
-					epin->DIEPINT |= USB_OTG_DIEPINT_XFRC;
-					event = USB_common::USB_EVENTS::EP_TX;
-					ep = i | 0x80;
-
-					ret = true;
-					break;
-				}
-			}
-			if(!ret)
-			{
-				return;
-			}
-		}
-		else if(GINTSTS & USB_OTG_GINTSTS_RXFLVL)
-		{
-			const uint32_t GRXSTSR = OTG->GRXSTSR;
-			ep = _FLD2VAL(USB_OTG_GRXSTSP_EPNUM, GRXSTSR);
-
-			// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL, 0x%08X, %d", GRXSTSR, ep);
-
-			switch(_FLD2VAL(USB_OTG_GRXSTSP_PKTSTS, GRXSTSR))
-			{
-				case 0x01:
-				{
-					//GLOBAL OUT NAK, int
-					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-					continue;
-				}
-				case 0x02:
-				{
-					// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS IN RX - out data rx");
-
-					//OUT packet received
-					event = USB_common::USB_EVENTS::EP_RX;
-					break;
-				}
-				case 0x03:
-				{
-					// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS  0x03 - out transfer done");
-
-					//OUT transfer completed, int
-					Register_util::set_bits(&(get_ep_out(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
-					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-					continue;
-				}
-				case 0x04:
-				{
-					// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS 0x04 - setup transaction done");
-
-					//SETUP transaction completed, int
-					Register_util::set_bits(&(get_ep_out(ep)->DOEPCTL), USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
-					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-
-					// event = USB_common::USB_EVENTS::SETUP_TRX_DONE;
-					// break;
-					continue;
-				}
-				case 0x06:
-				{
-					// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL PKTSTS 0x06 - setup packet received");
-
-					//SETUP data packet received
-					if(get_ep_in(ep)->DIEPTSIZ & USB_OTG_DIEPTSIZ_PKTCNT)
-					{
-						flush_tx(ep);
-					}
-
-					event = USB_common::USB_EVENTS::SETUP_PACKET_RX;
-					break;
-				}
-				default:
-				{
-					//???
-					//force a pop
-					volatile uint32_t GRXSTSP = OTG->GRXSTSP;
-					continue;
-				}
-			}
-		}
-		else if(GINTSTS & USB_OTG_GINTSTS_SOF)
-		{
-			//uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_SOF");
-
-			OTG->GINTSTS = USB_OTG_GINTSTS_SOF;
-
-			event = USB_common::USB_EVENTS::SOF;
-		}
-		else if(GINTSTS & USB_OTG_GINTSTS_USBSUSP)
-		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_USBSUSP");
-
-			OTG->GINTSTS = USB_OTG_GINTSTS_USBSUSP;
-
-			event = USB_common::USB_EVENTS::SUSPEND;
-		}
-        else if(GINTSTS & USB_OTG_GINTSTS_ESUSP)
-        {
-        	// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_ESUSP");
-
-            OTG->GINTSTS = USB_OTG_GINTSTS_ESUSP;
-            
-            event = USB_common::USB_EVENTS::EARLY_SUSPEND;
-        }
-		else if(GINTSTS & USB_OTG_GINTSTS_WKUINT)
-		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_WKUINT");
-
-			OTG->GINTSTS = USB_OTG_GINTSTS_WKUINT;
-
-			event = USB_common::USB_EVENTS::WAKEUP;
-		}
-		else
-		{
-			//no events
-			return;
-		}
-
-		func(event, ep);
-		break;
+		func(event, ep_num);
 	}
 }
-#endif
 
 void stm32_h7xx_otghs::set_data0(const uint8_t ep)
 {

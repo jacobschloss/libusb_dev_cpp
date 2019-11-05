@@ -126,7 +126,13 @@ bool USB_core::handle_sof()
 
 bool USB_core::wait_event_loop()
 {
-	return poll_event_loop(true);
+	bool ret = poll_event_loop(true);
+	// if(!ret)
+	// {
+	// 	Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "wait_event_loop ret false");
+	// }
+
+	return ret;
 }
 
 bool USB_core::poll_event_loop()
@@ -200,7 +206,7 @@ bool USB_core::poll_event_loop(const bool wait)
 		{
 			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "USB_EVENTS::CTRL_DATA_PHASE_DONE");
 
-			return false;			
+			break;
 		}
 		case USB_common::USB_EVENTS::EARLY_SUSPEND:
 		{
