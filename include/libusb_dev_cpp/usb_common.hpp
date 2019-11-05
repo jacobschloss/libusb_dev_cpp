@@ -22,14 +22,31 @@ public:
 		SOF,
 		EARLY_SUSPEND,
 		SUSPEND,
+		ENUM_DONE,
 		WAKEUP,
 		EP_RX,
 		EP_TX,
 		CTRL_SETUP_PHASE_DONE,
-		CTRL_STATUS_PHASE,
+		CTRL_DATA_PHASE_DONE,
 		NONE
 	};
 	static constexpr size_t USB_EVENTS_MAX = 8;
+
+	enum class USB_CONTROL_TYPE
+	{
+		NO_DATA,
+		HOST_WRITE,
+		HOST_READ
+	};
+
+	enum class USB_CONTROL_STATE
+	{
+		WAIT_SETUP,
+		WAIT_DATA_OUT,
+		WAIT_DATA_IN,
+		WAIT_STATUS_OUT,
+		WAIT_STATUS_IN,
+	};
 
 	enum class USB_RESP
 	{

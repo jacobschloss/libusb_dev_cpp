@@ -34,3 +34,13 @@ bool usb_driver_base::set_ep_setup_callback(const uint8_t ep_addr, const USB_com
 
 	return true;
 }
+
+bool usb_driver_base::handle_reset()
+{
+	return true;
+}
+
+bool usb_driver_base::handle_enum_done()
+{
+	return true;
+}

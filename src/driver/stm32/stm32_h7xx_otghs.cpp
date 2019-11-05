@@ -1111,7 +1111,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 				//we are now in status phase, send an ACK or stall for the status phase
 
-				event = USB_common::USB_EVENTS::CTRL_STATUS_PHASE;
+				event = USB_common::USB_EVENTS::CTRL_DATA_PHASE_DONE;
 			}
 			
 			//USB_OTG_DOEPINT_EPDISD//Endpoint disabled interrupt

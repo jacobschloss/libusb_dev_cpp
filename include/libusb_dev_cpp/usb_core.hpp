@@ -69,6 +69,8 @@ protected:
 	bool handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep);
 
 	bool handle_reset();
+	bool handle_enum_done();
+	bool handle_sof();
 
 	bool handle_ep0_setup(const USB_common::USB_EVENTS event, const uint8_t ep);
 	bool handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t ep);

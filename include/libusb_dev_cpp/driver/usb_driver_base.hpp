@@ -195,6 +195,9 @@ public:
 	//application give buffer to driver for transmission
 	virtual bool enqueue_tx_buffer(const uint8_t ep, Buffer_adapter_base* const buf) = 0;
 
+	virtual bool handle_reset();
+	virtual bool handle_enum_done();
+
 protected:
 
 	EP_buffer_mgr_base* m_ep0_buffer;
