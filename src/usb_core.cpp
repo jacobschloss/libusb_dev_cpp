@@ -124,10 +124,21 @@ bool USB_core::handle_sof()
 	return true;
 }
 
+bool USB_core::wait_event_loop()
+{
+	return poll_event_loop(true);
+}
+
 bool USB_core::poll_event_loop()
 {
+	return poll_event_loop(false);
+}
+
+bool USB_core::poll_event_loop(const bool wait)
+{
 	usb_core_event core_evt;
-	if(!m_event_queue.pop_front(&core_evt))
+
+	if(!m_event_queue.pop_front_wait(&core_evt, wait))
 	{
 		return false;
 	}

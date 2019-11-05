@@ -52,6 +52,9 @@ public:
 
 	//handle events
 	bool poll_event_loop();
+	bool poll_event_loop(const bool wait);
+
+	bool wait_event_loop();
 
 	bool enable();
 	bool disable();
