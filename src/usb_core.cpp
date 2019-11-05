@@ -13,10 +13,14 @@
 
 #include "common_util/Byte_util.hpp"
 
+#include "freertos_cpp_util/logging/Global_logger.hpp"
+
 #include "uart1_printf.hpp"
 
 #include <algorithm>
 #include <functional>
+
+using freertos_util::logging::Global_logger;
 
 USB_core::USB_core()
 {
@@ -110,6 +114,16 @@ bool USB_core::handle_reset()
 	return true;
 }
 
+bool USB_core::handle_enum_done()
+{
+	return true;
+}
+
+bool USB_core::handle_sof()
+{
+	return true;
+}
+
 bool USB_core::poll_event_loop()
 {
 	usb_core_event core_evt;
@@ -126,11 +140,22 @@ bool USB_core::poll_event_loop()
 	{
 		case USB_common::USB_EVENTS::RESET:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "USB_EVENTS::RESET");
+
 			ret = handle_reset();
+			break;
+		}
+		case USB_common::USB_EVENTS::ENUM_DONE:
+		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "USB_EVENTS::ENUM_DONE");
+
+			ret = handle_enum_done();
 			break;
 		}
 		case USB_common::USB_EVENTS::EP_RX:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "USB_core", "USB_EVENTS::EP_RX");
+
 			func = m_driver->get_ep_rx_callback(ep_addr);
 			if(func)
 			{
@@ -140,6 +165,8 @@ bool USB_core::poll_event_loop()
 		}
 		case USB_common::USB_EVENTS::EP_TX:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "USB_core", "USB_EVENTS::EP_TX");
+
 			func = m_driver->get_ep_tx_callback(ep_addr);
 			if(func)
 			{
@@ -149,6 +176,8 @@ bool USB_core::poll_event_loop()
 		}
 		case USB_common::USB_EVENTS::CTRL_SETUP_PHASE_DONE:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "USB_EVENTS::CTRL_SETUP_PHASE_DONE");
+
 			func = m_driver->get_ep_setup_callback(ep_addr);
 			if(func)
 			{
@@ -156,22 +185,37 @@ bool USB_core::poll_event_loop()
 			}
 			break;
 		}
-		case USB_common::USB_EVENTS::CTRL_STATUS_PHASE:
+		case USB_common::USB_EVENTS::CTRL_DATA_PHASE_DONE:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "USB_EVENTS::CTRL_DATA_PHASE_DONE");
+
 			return false;			
 		}
 		case USB_common::USB_EVENTS::EARLY_SUSPEND:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "USB_EVENTS::EARLY_SUSPEND");
+
 			//we will suspend soon
 			break;
 		}
 		case USB_common::USB_EVENTS::SUSPEND:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "USB_EVENTS::SUSPEND");
+
 			//we are suspended
+			break;
+		}
+		case USB_common::USB_EVENTS::SOF:
+		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "USB_core", "USB_EVENTS::SOF");
+
+			ret = handle_sof();
 			break;
 		}
 		case USB_common::USB_EVENTS::NONE:
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "USB_core", "USB_EVENTS::NONE");
+
 			//ISR triggered but we don't care
 			break;
 		}
@@ -251,23 +295,23 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 				return false;
 			}
 
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "setup_packet.bmRequestType: 0x%02X",
+			// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "setup_packet.bmRequestType: 0x%02X",
 			// 	m_setup_packet.bmRequestType
 			// 	);
 
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "setup_packet.bRequest: 0x%02X",
+			// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "setup_packet.bRequest: 0x%02X",
 			// 	m_setup_packet.bRequest
 			// 	);
 
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "setup_packet.wValue: 0x%04X",
+			// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "setup_packet.wValue: 0x%04X",
 			// 	m_setup_packet.wValue
 			// 	);
 
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "setup_packet.wIndex: 0x%04X",
+			// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "setup_packet.wIndex: 0x%04X",
 			// 	m_setup_packet.wIndex
 			// 	);
 
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core", "setup_packet.wLength: 0x%04X",
+			// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "setup_packet.wLength: 0x%04X",
 			// 	m_setup_packet.wLength
 			// 	);
 
@@ -380,7 +424,7 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_common::USB_RESP::ACK:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - ACK");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - ACK");
 
 			//did the host ask us to send data? if so, send it
 			if((req_type.data_dir == Request_type::DATA_DIR::DEV_TO_HOST))
@@ -395,7 +439,7 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 			}
 			else
 			{
-				uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - zlp");
+				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - zlp");
 
 				//otherwise send a zlp status packet
 				m_tx_buffer.reset();
@@ -406,14 +450,14 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_common::USB_RESP::NAK:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - NAK");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - NAK");
 
 			m_control_state = USB_CONTROL_STATE::STATUS_IN;
 			break;
 		}
 		default:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - default");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - default");
 			//invalid state, reset control endpoint
 			stall_control_ep(ep);
 			break;
@@ -428,7 +472,7 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_CONTROL_STATE::TXDATA:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXDATA", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXDATA", "");
 
 			const size_t ep0size = m_driver->get_ep0_config().size;
 			const size_t num_to_write = std::min(m_tx_buffer.rem_len, ep0size);
@@ -437,13 +481,13 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 
 			if(num_wrote < 0)
 			{
-				// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "ep_write error");
+				// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "ep_write error");
 			}
 			else
 			{
 				m_tx_buffer.curr_ptr += num_wrote;
 				m_tx_buffer.rem_len  -= num_wrote;
-				// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "wrote %d, left %d", num_wrote, m_tx_buffer.rem_len);
+				// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "wrote %d, left %d", num_wrote, m_tx_buffer.rem_len);
 			}
 
 			if(m_tx_buffer.rem_len == 0)
@@ -461,12 +505,12 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::TXZLP:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXZLP", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXZLP", "");
 
 			const int ret = m_driver->ep_write(ep | 0x80, nullptr, 0);
 			if(ret != 0)
 			{
-				// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "TXZLP had error on ep_write");
+				// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "TXZLP had error on ep_write");
 			}
 
 			m_control_state = USB_CONTROL_STATE::TXCOMP;
@@ -474,14 +518,14 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::TXCOMP:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXCOMP", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXCOMP", "");
 
 			m_control_state = USB_CONTROL_STATE::STATUS_OUT;
 			break;	
 		}
 		case USB_CONTROL_STATE::STATUS_IN:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_CONTROL_STATE::STATUS_IN", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::STATUS_IN", "");
 
 			m_control_state = USB_CONTROL_STATE::IDLE;
 			//tx complete, so status in ack sent
@@ -494,7 +538,7 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		default:
 		{
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "default, event %d, state %d", event, m_control_state);
+			// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_ep_tx", "default, event %d, state %d", event, m_control_state);
 			break;
 		}
 	}
@@ -516,7 +560,7 @@ USB_common::USB_RESP USB_core::process_request(Setup_packet* const req)
 	{
 		case Request_type::TYPE::STANDARD:
 		{	
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "STANDARD request");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::process_request", "STANDARD request");
 			switch(request_type.recipient)
 			{
 				case Request_type::RECIPIENT::DEVICE:
@@ -544,20 +588,20 @@ USB_common::USB_RESP USB_core::process_request(Setup_packet* const req)
 		}
 		case Request_type::TYPE::CLASS:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "CLASS request");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::process_request", "CLASS request");
 			// r = USB_common::USB_RESP::FAIL;
 			r = USB_common::USB_RESP::ACK;
 			break;
 		}
 		case Request_type::TYPE::VENDOR:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "VENDOR request");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::process_request", "VENDOR request");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
 		case Request_type::TYPE::RESERVED:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::process_request", "RESERVED request");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::process_request", "RESERVED request");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
@@ -605,23 +649,23 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_ADDRESS:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_ADDRESS");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_ADDRESS");
 
 			if((req->wIndex != 0) || (req->wLength != 0))
 			{
-				// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_ADDRESS packet invalid");
+				// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_ADDRESS packet invalid");
 				r = USB_common::USB_RESP::FAIL;
 				break;
 			}
 
 			if(req->wValue > 127)
 			{
-				// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_ADDRESS address invalid");
+				// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_ADDRESS address invalid");
 				r = USB_common::USB_RESP::FAIL;
 				break;
 			}
 
-			// uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "Queue SET_ADDRESS to %d", req->wValue);
+			// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "Queue SET_ADDRESS to %d", req->wValue);
 			
 			// m_address = req->wValue;
 			// m_setup_complete_callback = std::bind(&USB_core::set_address, this, req->wValue);
@@ -632,7 +676,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 		// handled by child class
 		case Setup_packet::DEVICE_REQUEST::GET_DESCRIPTOR:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_DESCRIPTOR");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_DESCRIPTOR");
 
 			const USB_common::DESCRIPTOR_TYPE desc_type = static_cast<USB_common::DESCRIPTOR_TYPE>(Byte_util::get_b1(req->wValue));
 			const uint8_t desc_index = Byte_util::get_b0(req->wValue);
@@ -682,7 +726,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 
 					for(size_t i = 0; i < config_desc->size(); i++)
 					{
-						uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - 0x%02X", m_tx_buffer.data()[i]);
+						Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - 0x%02X", m_tx_buffer.data()[i]);
 					}
 
 					//send iface and ep descriptors if asked for more
@@ -692,7 +736,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 
 						while(desc_node)
 						{
-							uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - node");
+							Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "CONFIGURATION - node");
 
 							if(m_tx_buffer.size() == req->wLength)
 							{
@@ -746,13 +790,13 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_DESCRIPTOR:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_DESCRIPTOR");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_DESCRIPTOR");
 			r = USB_common::USB_RESP::FAIL;
 			break;
 		}
 		case Setup_packet::DEVICE_REQUEST::GET_CONFIGURATION:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_CONFIGURATION");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "GET_CONFIGURATION");
 
 			if(
 				(req->wValue  != 0) ||
@@ -777,7 +821,7 @@ USB_common::USB_RESP USB_core::handle_std_device_request(Setup_packet* const req
 		}
 		case Setup_packet::DEVICE_REQUEST::SET_CONFIGURATION:
 		{
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_CONFIGURATION");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::handle_std_device_request", "SET_CONFIGURATION");
 			if(
 				(Byte_util::get_b1(req->wValue) != 0) ||
 				(req->wIndex  != 0)                   ||
@@ -895,22 +939,22 @@ bool USB_core::set_configuration(const uint8_t bConfigurationValue)
 			m_configuration = bConfigurationValue;
 			ret = true;
 
-			uart1_log<64>(LOG_LEVEL::INFO, "USB_core::set_configuration", "Config set to %d ok", m_configuration);
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core::set_configuration", "Config set to %d ok", m_configuration);
 		}
 		else
 		{
-			uart1_log<64>(LOG_LEVEL::ERROR, "USB_core::set_configuration", "Config set to %d failed, trying to set config to 0", bConfigurationValue);
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "USB_core::set_configuration", "Config set to %d failed, trying to set config to 0", bConfigurationValue);
 			
 			if(m_set_config_callback_func(m_set_config_callback_ctx, 0))
 			{
 				m_configuration = 0;
 				ret = true;
 
-				uart1_log<64>(LOG_LEVEL::ERROR, "USB_core::set_configuration", "Config set to %d ok", m_configuration);
+				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "USB_core::set_configuration", "Config set to %d ok", m_configuration);
 			}
 			else
 			{
-				uart1_log<64>(LOG_LEVEL::FATAL, "USB_core::set_configuration", "Could not set configuration to 0");
+				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::FATAL, "USB_core::set_configuration", "Could not set configuration to 0");
 			}
 
 			ret = false;
@@ -918,7 +962,7 @@ bool USB_core::set_configuration(const uint8_t bConfigurationValue)
 	}
 	else
 	{
-		uart1_log<64>(LOG_LEVEL::FATAL, "USB_core::set_configuration", "No set configuration handler registered, can't configure");
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::FATAL, "USB_core::set_configuration", "No set configuration handler registered, can't configure");
 		ret = false;
 	}
 
