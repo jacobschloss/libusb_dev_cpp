@@ -983,7 +983,7 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 		const uint32_t GRXSTSP = OTG->GRXSTSP;
 
 		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL GINTSTS 0x%08X", GINTSTS);
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL GRXSTSP 0x%08X", GRXSTSP);
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL GRXSTSP 0x%08X", GRXSTSP);
 
 		const uint32_t STSPHST = (GRXSTSP & 0x08000000) >> 27;
 		const uint32_t FRMNUM  = (GRXSTSP & 0x01E00000) >> 21;
@@ -995,20 +995,13 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 
 		Stack_string<128> msg;
 		msg.clear();
-		msg.sprintf("\tSTSPHST", "%" PRIu32, STSPHST);
-		msg.sprintf("\tFRMNUM",  "%" PRIu32, FRMNUM);
-		msg.sprintf("\tPKTSTS",  "%" PRIu32, PKTSTS);
-		msg.sprintf("\tDPID",    "%" PRIu32, DPID);
-		msg.sprintf("\tBCNT",    "%" PRIu32, BCNT);
-		msg.sprintf("\tEPNUM",   "%" PRIu32, EPNUM);
-		HAL_UART_Transmit(&huart1, reinterpret_cast<uint8_t*>(const_cast<char*>(msg.c_str())), msg.size(), -1);
-
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "STSPHST %" PRIu32, STSPHST);
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "FRMNUM  %" PRIu32, FRMNUM);
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "PKTSTS  %" PRIu32, PKTSTS);
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "DPID    %" PRIu32, DPID);
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "BCNT    %" PRIu32, BCNT);
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "EPNUM   %" PRIu32, EPNUM);
+		msg.sprintf("\tSTSPHST %" PRIu32 "\r\n", STSPHST);
+		msg.sprintf("\tFRMNUM  %" PRIu32 "\r\n", FRMNUM);
+		msg.sprintf("\tPKTSTS  %" PRIu32 "\r\n", PKTSTS);
+		msg.sprintf("\tDPID    %" PRIu32 "\r\n", DPID);
+		msg.sprintf("\tBCNT    %" PRIu32 "\r\n", BCNT);
+		msg.sprintf("\tEPNUM   %" PRIu32,        EPNUM);
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "GRXSTSP:\r\n%s", msg.c_str());
 
 		switch(PKTSTS)
 		{

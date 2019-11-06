@@ -441,7 +441,7 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_common::USB_RESP::ACK:
 		{
-			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - ACK");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "handle_ep0_rx process_request - ACK");
 
 			//did the host ask us to send data? if so, send it
 			if((req_type.data_dir == Request_type::DATA_DIR::DEV_TO_HOST))
@@ -456,7 +456,7 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 			}
 			else
 			{
-				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - zlp");
+				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "handle_ep0_rx process_request - zlp");
 
 				//otherwise send a zlp status packet
 				m_tx_buffer.reset();
@@ -467,14 +467,14 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_common::USB_RESP::NAK:
 		{
-			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - NAK");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "handle_ep0_rx process_request - NAK");
 
 			m_control_state = USB_CONTROL_STATE::STATUS_IN;
 			break;
 		}
 		default:
 		{
-			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "handle_ep0_rx", "process_request - default");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "handle_ep0_rx process_request - default");
 			//invalid state, reset control endpoint
 			stall_control_ep(ep);
 			break;
@@ -489,7 +489,7 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 	{
 		case USB_CONTROL_STATE::TXDATA:
 		{
-			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXDATA", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "USB_CONTROL_STATE::TXDATA");
 
 			const size_t ep0size = m_driver->get_ep0_config().size;
 			const size_t num_to_write = std::min(m_tx_buffer.rem_len, ep0size);
@@ -522,7 +522,7 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::TXZLP:
 		{
-			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXZLP", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "USB_CONTROL_STATE::TXZLP");
 
 			const int ret = m_driver->ep_write(ep | 0x80, nullptr, 0);
 			if(ret != 0)
@@ -535,14 +535,14 @@ bool USB_core::handle_ep0_tx(const USB_common::USB_EVENTS event, const uint8_t e
 		}
 		case USB_CONTROL_STATE::TXCOMP:
 		{
-			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::TXCOMP", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "USB_CONTROL_STATE::TXCOMP");
 
 			m_control_state = USB_CONTROL_STATE::STATUS_OUT;
 			break;	
 		}
 		case USB_CONTROL_STATE::STATUS_IN:
 		{
-			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_CONTROL_STATE::STATUS_IN", "");
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "USB_core", "USB_CONTROL_STATE::STATUS_IN");
 
 			m_control_state = USB_CONTROL_STATE::IDLE;
 			//tx complete, so status in ack sent
