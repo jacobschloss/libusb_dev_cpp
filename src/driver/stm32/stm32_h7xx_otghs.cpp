@@ -327,14 +327,16 @@ bool stm32_h7xx_otghs::enable()
 
 	//config core interrupt
 	OTG->GINTMSK  = USB_OTG_GINTMSK_WUIM     |
+					USB_OTG_GINTMSK_OEPINT   |
+					USB_OTG_GINTMSK_IEPINT   |
 					USB_OTG_GINTMSK_ENUMDNEM |
 					USB_OTG_GINTMSK_USBRST   |
     				USB_OTG_GINTMSK_USBSUSPM |
 					USB_OTG_GINTMSK_ESUSPM   |
+					USB_OTG_GINTMSK_RXFLVLM  |
     				//USB_OTG_GINTMSK_SOFM   |
-					USB_OTG_GINTMSK_OEPINT   |
-					USB_OTG_GINTMSK_IEPINT   |
-					USB_OTG_GINTMSK_RXFLVLM
+					USB_OTG_GINTMSK_OTGINT   |
+					USB_OTG_GINTMSK_MMISM
 					;
 
 	//turn on global interrupt
@@ -908,14 +910,25 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 	// 	msg.sprintf("\tGINTMSK: 0x%08" PRIX32 "\r\n", OTG->GINTMSK);
 	// 	HAL_UART_Transmit(&huart1, reinterpret_cast<uint8_t*>(const_cast<char*>(msg.c_str())), msg.size(), -1);
 	// }
+	if(GINTSTS & USB_OTG_GINTSTS_MMIS)
+	{
+		OTG->GINTSTS = USB_OTG_GINTSTS_MMIS;
 
-	if(GINTSTS & USB_OTG_GINTSTS_SRQINT)
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_MMIS");
+	}
+	else if(GINTSTS & USB_OTG_GINTSTS_OTGINT)
+	{
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_OTGINT");
+	}
+	else if(GINTSTS & USB_OTG_GINTSTS_SRQINT)
 	{
 		OTG->GINTSTS = USB_OTG_GINTSTS_SRQINT;
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_SRQINT");
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_WKUINT)
 	{
-		OTG->GINTSTS = USB_OTG_GINTSTS_WKUINT;	
+		OTG->GINTSTS = USB_OTG_GINTSTS_WKUINT;
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_WKUINT");
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_ESUSP)
 	{
@@ -959,9 +972,15 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_SOF)
 	{
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::TRACE, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_SOF");
+
 		OTG->GINTSTS = USB_OTG_GINTSTS_SOF;
 
-		event = USB_common::USB_EVENTS::SOF;
+		//only emit the SOF event if we are asked to interrupt for SOF
+		if(OTG->GINTMSK & USB_OTG_GINTSTS_SOF)
+		{
+			event = USB_common::USB_EVENTS::SOF;
+		}
 	}
 	else if(GINTSTS & USB_OTG_GINTSTS_IEPINT)
 	{
@@ -1009,7 +1028,6 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 			{
 				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL 2");
 
-				//wait to process until later in the ep isr
 				if(BCNT != 0)
 				{
 					if(ep_num != 0)
@@ -1108,7 +1126,6 @@ void stm32_h7xx_otghs::poll(const USB_common::Event_callback& func)
 			{
 				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_RXFLVL pksts 6");
 
-				//wait to process until later in the ep isr
 				if(BCNT != 0)
 				{
 					ep_read(ep_num, m_last_setup_packet.data(), BCNT);
