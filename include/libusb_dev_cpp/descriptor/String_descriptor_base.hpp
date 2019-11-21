@@ -17,7 +17,7 @@ public:
 		m_str = nullptr;
 	}
 
-	bool serialize(Buffer_adapter* const out_array) const override;
+	bool serialize(Buffer_adapter_tx* const out_array) const override;
 
 	size_t size() const override;
 
@@ -48,7 +48,7 @@ public:
 		ENUS = 0x0409
 	};
 
-	bool serialize(Buffer_adapter* const out_array) const override;
+	bool serialize(Buffer_adapter_tx* const out_array) const override;
 
 	size_t size() const override;
 

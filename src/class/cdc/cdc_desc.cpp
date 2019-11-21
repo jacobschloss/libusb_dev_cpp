@@ -21,7 +21,7 @@ bool CDC_header_descriptor::serialize(CDC_header_descriptor_array* const out_arr
 
 	return true;
 }
-bool CDC_header_descriptor::serialize(Buffer_adapter* const out_array) const
+bool CDC_header_descriptor::serialize(Buffer_adapter_tx* const out_array) const
 {
 	if(out_array->capacity() < size())
 	{
@@ -48,7 +48,7 @@ bool CDC_call_management_descriptor::serialize(CDC_call_management_descriptor_ar
 
 	return true;
 }
-bool CDC_call_management_descriptor::serialize(Buffer_adapter* const out_array) const
+bool CDC_call_management_descriptor::serialize(Buffer_adapter_tx* const out_array) const
 {
 	if(out_array->capacity() < size())
 	{
@@ -74,7 +74,7 @@ bool CDC_acm_descriptor::serialize(CDC_acm_descriptor_array* const out_array) co
 
 	return true;
 }
-bool CDC_acm_descriptor::serialize(Buffer_adapter* const out_array) const
+bool CDC_acm_descriptor::serialize(Buffer_adapter_tx* const out_array) const
 {
 	if(out_array->capacity() < size())
 	{
@@ -101,7 +101,7 @@ bool CDC_union_descriptor::serialize(CDC_union_descriptor_array* const out_array
 
 	return true;
 }
-bool CDC_union_descriptor::serialize(Buffer_adapter* const out_array) const
+bool CDC_union_descriptor::serialize(Buffer_adapter_tx* const out_array) const
 {
 	if(out_array->capacity() < size())
 	{

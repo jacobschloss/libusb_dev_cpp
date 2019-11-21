@@ -20,7 +20,7 @@ bool Endpoint_descriptor::serialize(Endpoint_descriptor_array* const out_array) 
 
 	return true;
 }
-bool Endpoint_descriptor::serialize(Buffer_adapter* const out_array) const
+bool Endpoint_descriptor::serialize(Buffer_adapter_tx* const out_array) const
 {
 	if(out_array->capacity() < size())
 	{

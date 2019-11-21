@@ -20,7 +20,7 @@ public:
 
 	}
 
-	virtual bool serialize(Buffer_adapter* const out_array) const = 0;
+	virtual bool serialize(Buffer_adapter_tx* const out_array) const = 0;
 
 	virtual size_t size() const = 0;
 };

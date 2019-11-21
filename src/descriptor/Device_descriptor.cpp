@@ -31,7 +31,7 @@ bool Device_descriptor::serialize(Device_descriptor_array* const out_array) cons
 
 	return true;
 }
-bool Device_descriptor::serialize(Buffer_adapter* const out_array) const
+bool Device_descriptor::serialize(Buffer_adapter_tx* const out_array) const
 {
 	if(out_array->capacity() < size())
 	{

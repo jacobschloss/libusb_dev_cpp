@@ -6,125 +6,121 @@
 
 #include "libusb_dev_cpp/class/cdc/cdc_usb.hpp"
 
-#include "libusb_dev_cpp/core/Get_descriptor.hpp"
+#include "libusb_dev_cpp/class/cdc/cdc.hpp"
+#include "libusb_dev_cpp/class/cdc/cdc_mgmt_requests.hpp"
 
+#include "freertos_cpp_util/logging/Global_logger.hpp"
 
-CDC_usb::CDC_usb()
+using freertos_util::logging::Global_logger;
+using freertos_util::logging::LOG_LEVEL;
+
+CDC_class::CDC_class()
 {
 
 }
-CDC_usb::~CDC_usb()
+CDC_class::~CDC_class()
 {
 
 }
 
-bool CDC_usb::fill_descriptors()
+USB_common::USB_RESP CDC_class::handle_class_request(Setup_packet* const req, Buffer_adapter_rx* const buf_from_host, Buffer_adapter_tx* const buf_to_host)
 {
-	Device_descriptor dev_desc;
-	dev_desc.bcdUSB = USB_common::build_bcd(2, 0, 0);
-	dev_desc.bDeviceClass    = 0;
-	dev_desc.bDeviceSubClass = 0;
-	dev_desc.bDeviceProtocol = 0;
-	dev_desc.bMaxPacketSize0 = 8;
-	dev_desc.idVendor  = 0x0123;
-	dev_desc.idProduct = 0x4567;
-	dev_desc.bcdDevice = USB_common::build_bcd(1, 0, 0);
-	dev_desc.iManufacturer      = 0;
-	dev_desc.iProduct           = 0;
-	dev_desc.iSerialNumber      = 0;
-	dev_desc.bNumConfigurations = 1;
-	if(!dev_desc.serialize(&dev_desc_array))
-	{
-		return false;
-	}
-
-	// Configuration_descriptor conf_desc;
-	// conf_desc.wTotalLength        = Configuration_descriptor::bLength;
-	// conf_desc.bNumInterfaces      = 2;
-	// conf_desc.bConfigurationValue = 1;
-	// conf_desc.iConfiguration      = 0;
-	// conf_desc.bmAttributes        = 0;
-	// conf_desc.bMaxPower           = Configuration_descriptor::ma_to_maxpower(150);
-	// if(!conf_desc.serialize(&conf_desc_array))
-	// {
-	// 	return false;
-	// }
-
-	Interface_descriptor iface_desc;
-	if(!iface_desc.serialize(&iface_desc_array))
-	{
-		return false;
-	}
-
-	Endpoint_descriptor ep_in_desc;
-	if(!ep_in_desc.serialize(&ep_in_desc_array))
-	{
-		return false;
-	}
-
-	Endpoint_descriptor ep_out_desc;
-	if(!ep_out_desc.serialize(&ep_out_desc_array))
-	{
-		return false;
-	}
-
-	return true;
-}
-
-USB_common::USB_RESP CDC_usb::handle_std_device_request(Setup_packet* const req)
-{
+	freertos_util::logging::Logger* const logger = freertos_util::logging::Global_logger::get();
 	USB_common::USB_RESP r = USB_common::USB_RESP::FAIL;
 
-	switch(static_cast<Setup_packet::DEVICE_REQUEST>(req->bRequest))
+	buf_to_host->reset();
+
+	// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "setup_packet.bRequest: 0x%02X",
+	// 	m_setup_packet.bRequest
+	// 	);
+
+	// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "setup_packet.wValue: 0x%04X",
+	// 	m_setup_packet.wValue
+	// 	);
+
+	// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "setup_packet.wIndex: 0x%04X",
+	// 	m_setup_packet.wIndex
+	// 	);
+
+	// Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core", "setup_packet.wLength: 0x%04X",
+	// 	m_setup_packet.wLength
+	// 	);
+
+	if(req->wLength != buf_from_host->size())
 	{
-		case Setup_packet::DEVICE_REQUEST::GET_DESCRIPTOR:
+		logger->log(LOG_LEVEL::WARN, "CDC_class", "handle_class_request: SETUP wLength and buffer length do not match");
+	}
+
+	logger->log(LOG_LEVEL::DEBUG, "CDC_class", "handle_class_request: buf_from_host %d", buf_from_host->size());
+	for(size_t i = 0; i < buf_from_host->size(); i++)
+	{
+		logger->log(LOG_LEVEL::DEBUG, "CDC_class", "\tbuf_from_host[%u]: 0x%02X", i, buf_from_host->data()[i]);
+	}
+
+	switch(static_cast<CDC::CDC_REQUESTS>(req->bRequest))
+	{
+		case CDC::CDC_REQUESTS::CLEAR_COMM_FEATURE:
 		{
-			Get_descriptor get_desc;
-			if(!get_desc.deserialize(req->wValue))
+			logger->log(LOG_LEVEL::INFO, "CDC_class", "handle_class_request: CLEAR_COMM_FEATURE");
+			break;
+		}
+		case CDC::CDC_REQUESTS::SET_LINE_CODING:
+		{
+			logger->log(LOG_LEVEL::INFO, "CDC_class", "handle_class_request: SET_LINE_CODING");
+
+			CDC::LINE_CODING line;
+			if(line.deserialize(buf_from_host))
 			{
-				r = USB_common::USB_RESP::FAIL;
-				break;
+				r = USB_common::USB_RESP::ACK;
 			}
-			const uint16_t lang_id = req->wIndex;
-
-			switch(get_desc.type)
+			else
 			{
-				case Get_descriptor::DESCRIPTOR_TYPES::DEVICE:
-				{
-
-				}
-				case Get_descriptor::DESCRIPTOR_TYPES::CONFIGURATION:
-				{
-					
-				}
-				case Get_descriptor::DESCRIPTOR_TYPES::STRING:
-				{
-					
-				}
-				default:
-				{
-					r = USB_common::USB_RESP::FAIL;
-					break;
-				}
+				// r = USB_common::USB_RESP::NAK;
+				r = USB_common::USB_RESP::ACK;
+				logger->log(LOG_LEVEL::INFO, "CDC_class::SET_LINE_CODING", "deserialize failed");
 			}
 
+			break;
+		}
+		case CDC::CDC_REQUESTS::GET_LINE_CODING:
+		{
+			logger->log(LOG_LEVEL::INFO, "CDC_class", "handle_class_request: GET_LINE_CODING");
+			
+			CDC::LINE_CODING line;
+
+			line.dwDTERRate = 9600;
+			line.bCharFormat = static_cast<uint8_t>(CDC::LINE_CODING::CHAR_FORMAT::ONE_STOP);
+			line.bParityType = static_cast<uint8_t>(CDC::LINE_CODING::PARITY_TYPE::NONE);
+			line.bDataBits   = static_cast<uint8_t>(CDC::LINE_CODING::DATA_BITS::EIGHT);
+
+			line.serialize(buf_to_host);
+
+			r = USB_common::USB_RESP::ACK;
+			break;
+		}
+		case CDC::CDC_REQUESTS::SET_CONTROL_LINE_STATE:
+		{
+			logger->log(LOG_LEVEL::INFO, "CDC_class", "handle_class_request: SET_CONTROL_LINE_STATE");
+			CDC::SET_CONTROL_LINE_STATE ctrl_line_state;
+			ctrl_line_state.wValue = req->wValue;
+
+			logger->log(LOG_LEVEL::INFO, "CDC_class", "handle_class_request: SET_CONTROL_LINE_STATE, DTR: %d, RTR: %d", ctrl_line_state.DTR(), ctrl_line_state.RTS());
+
+			r = USB_common::USB_RESP::ACK;
+			break;
+		}
+		case CDC::CDC_REQUESTS::SEND_BREAK:
+		{
+			logger->log(LOG_LEVEL::INFO, "CDC_class", "handle_class_request: SEND_BREAK");
+			r = USB_common::USB_RESP::NAK;
 			break;
 		}
 		default:
 		{
-			//try the base class
-			r = USB_core::handle_std_device_request(req);
-			break;
+			logger->log(LOG_LEVEL::INFO, "CDC_class", "handle_class_request: unknown, %d", int(req->bRequest));
+			break;	
 		}
 	}
-
+	
 	return r;
-}
-USB_common::USB_RESP CDC_usb::handle_std_iface_request(Setup_packet* const req)
-{
-	return USB_common::USB_RESP::FAIL;
-}
-USB_common::USB_RESP CDC_usb::handle_std_ep_request(Setup_packet* const req)
-{
-	return USB_common::USB_RESP::FAIL;
 }

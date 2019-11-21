@@ -7,6 +7,7 @@
 #pragma once
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+#include "libusb_dev_cpp/util/Buffer_adapter.hpp"
 
 #include <array>
 
@@ -16,53 +17,52 @@ namespace CDC
 {
 class SET_CONTROL_LINE_STATE
 {
-	struct Control_signal
+public:
+	bool DTR() const
 	{
-		bool DTR() const
-		{
-			return wValue & 0x0001;
-		}
-		bool RTS() const
-		{
-			return wValue & 0x0002;
-		}
+		return wValue & 0x0001;
+	}
+	bool RTS() const
+	{
+		return wValue & 0x0002;
+	}
 
-		void set_DTR(const bool val)
+	void set_DTR(const bool val)
+	{
+		if(val)
 		{
-			if(val)
-			{
-				wValue |= 0x0001;	
-			}
-			else
-			{
-				wValue &= ~(0x0001);
-			}
+			wValue |= 0x0001;	
 		}
-		void set_RTS(const bool val)
+		else
 		{
-			if(val)
-			{
-				wValue |= 0x0002;	
-			}
-			else
-			{
-				wValue &= ~(0x0002);
-			}
+			wValue &= ~(0x0001);
 		}
+	}
+	void set_RTS(const bool val)
+	{
+		if(val)
+		{
+			wValue |= 0x0002;	
+		}
+		else
+		{
+			wValue &= ~(0x0002);
+		}
+	}
 
-		uint16_t wValue;
-	};
+	uint16_t wValue;
 };
 
 class LINE_CODING
 {
-	enum CHAR_FORMAT : uint8_t
+public:
+	enum class CHAR_FORMAT : uint8_t
 	{
 		ONE_STOP = 0,
 		ONEPTFIVE_STOP = 1,
 		TWO_STOP = 2
 	};
-	enum PARITY_TYPE : uint8_t
+	enum class PARITY_TYPE : uint8_t
 	{
 		NONE  = 0,
 		ODD   = 1,
@@ -70,7 +70,7 @@ class LINE_CODING
 		MARK  = 3,
 		SPACE = 4
 	};
-	enum DATA_BITS : uint8_t
+	enum class DATA_BITS : uint8_t
 	{
 		FIVE    = 5,
 		SIX     = 6,
@@ -86,9 +86,10 @@ class LINE_CODING
 	typedef std::array<uint8_t, 7> Line_coding_array;
 
 	bool serialize(Line_coding_array* const out_array) const;
-	bool serialize(Buffer_adapter* const out_array) const;
+	bool serialize(Buffer_adapter_tx* const out_array) const;
 
 	bool deserialize(const Line_coding_array& array);
+	bool deserialize(const Buffer_adapter_base* buf);
 };
 
 class SET_LINE_CODING

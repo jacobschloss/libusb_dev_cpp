@@ -5,9 +5,13 @@ add_library(usb_dev_cpp
 	src/descriptor/Interface_descriptor.cpp
 	src/descriptor/String_descriptor_base.cpp
 
+	src/class/usb_class.cpp
+
 	src/class/cdc/cdc.cpp
 	src/class/cdc/cdc_desc.cpp
 	src/class/cdc/cdc_mgmt_requests.cpp
+	src/class/cdc/cdc_notification.cpp
+
 
 	src/class/dfu/dfu.cpp
 
@@ -45,12 +49,12 @@ target_include_directories(usb_dev_cpp PUBLIC
 
 target_link_libraries(usb_dev_cpp
 	common_util
+	freertos_cpp_util
 )
 
 target_link_libraries(usb_dev_cpp_stm32
 	usb_dev_cpp
 
-	freertos_cpp_util
 	stm32h750xx_cmsis
 )
 

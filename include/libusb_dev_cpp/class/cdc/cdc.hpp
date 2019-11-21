@@ -121,10 +121,14 @@ namespace CDC
 
 	enum class CDC_NOTIFICATION : uint8_t
 	{
-		NETWORK_CONNECTION = 0x00,
-		RESPONSE_AVAILABLE = 0x01,
-		SERIAL_STATE       = 0x20,
-		SPEED_CHANGE       = 0x2A
+		NETWORK_CONNECTION      = 0x00,
+		RESPONSE_AVAILABLE      = 0x01,
+		AUX_JACK_HOOK_STATE     = 0x08,
+		RING_DETECT             = 0x09,
+		SERIAL_STATE            = 0x20,
+		CALL_STATE_CHANGE       = 0x28,
+		LINE_STATE_CHANGE       = 0x29,
+		CONNECTION_SPEED_CHANGE = 0x2A
 	};
 
 	enum class CDC_ACMGMNTCAP : uint8_t

@@ -542,7 +542,7 @@ bool stm32_h7xx_otghs::ep_config(const ep_cfg& ep)
 		}
 	}
 
-	return false;
+	return true;
 }
 bool stm32_h7xx_otghs::ep_unconfig(const uint8_t ep)
 {
@@ -619,7 +619,7 @@ bool stm32_h7xx_otghs::ep_is_stalled(const uint8_t ep)
 	{
 		volatile USB_OTG_OUTEndpointTypeDef* epout = get_ep_out(ep_addr);
 
-		is_stalled = epout->DOEPCTL | USB_OTG_DOEPCTL_STALL;
+		is_stalled = epout->DOEPCTL & USB_OTG_DOEPCTL_STALL;
 	}
 
 	return is_stalled;
@@ -666,9 +666,12 @@ void stm32_h7xx_otghs::ep_unstall(const uint8_t ep)
 
 		Register_util::clear_bits(&epin->DIEPCTL, USB_OTG_DIEPCTL_STALL);
 
-		if((cfg.type == EP_TYPE::BULK) || (cfg.type == EP_TYPE::INTERRUPT))
+		if(ep_addr != 0)
 		{
-			Register_util::set_bits(&epin->DIEPCTL, USB_OTG_DIEPCTL_SD0PID_SEVNFRM);
+			if((cfg.type == EP_TYPE::BULK) || (cfg.type == EP_TYPE::INTERRUPT))
+			{
+				Register_util::set_bits(&epin->DIEPCTL, USB_OTG_DIEPCTL_SD0PID_SEVNFRM);
+			}
 		}
 	}
 	else
@@ -676,9 +679,12 @@ void stm32_h7xx_otghs::ep_unstall(const uint8_t ep)
 		volatile USB_OTG_OUTEndpointTypeDef* epout = get_ep_out(ep_addr);
 
 		Register_util::clear_bits(&epout->DOEPCTL, USB_OTG_DOEPCTL_STALL);
-		if((cfg.type == EP_TYPE::BULK) || (cfg.type == EP_TYPE::INTERRUPT))
+		if(ep_addr != 0)
 		{
-			Register_util::set_bits(&epout->DOEPCTL, USB_OTG_DOEPCTL_SD0PID_SEVNFRM);
+			if((cfg.type == EP_TYPE::BULK) || (cfg.type == EP_TYPE::INTERRUPT))
+			{
+				Register_util::set_bits(&epout->DOEPCTL, USB_OTG_DOEPCTL_SD0PID_SEVNFRM);
+			}
 		}
 	}
 }
@@ -704,7 +710,7 @@ int stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint1
 	const uint32_t INEPTFSAV = _FLD2VAL(USB_OTG_DTXFSTS_INEPTFSAV, DTXFSTS);
 	if(INEPTFSAV < len32)
 	{
-		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs::ep_write", "wanted %d but only %d avail", len32, INEPTFSAV);
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs::ep_write", "wanted %d but only %d avail on 0x%02X", len32, INEPTFSAV, ep);
 		return -1;
 	}
 

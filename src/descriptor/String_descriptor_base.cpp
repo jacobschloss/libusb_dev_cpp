@@ -10,7 +10,10 @@
 
 #include <cstring>
 
-bool String_descriptor_base::serialize(Buffer_adapter* const out_array) const
+constexpr uint8_t String_descriptor_base::bDescriptorType;
+constexpr size_t String_descriptor_base::str_len_max;
+
+bool String_descriptor_base::serialize(Buffer_adapter_tx* const out_array) const
 {
 	const uint8_t len = size();
 	out_array->insert(len);
@@ -60,7 +63,7 @@ size_t String_descriptor_base::size() const
 
 
 
-bool String_descriptor_zero::serialize(Buffer_adapter* const out_array) const
+bool String_descriptor_zero::serialize(Buffer_adapter_tx* const out_array) const
 {
 	const uint8_t len = size();
 	out_array->insert(len);

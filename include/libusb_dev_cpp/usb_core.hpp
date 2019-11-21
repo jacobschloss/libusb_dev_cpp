@@ -7,7 +7,10 @@
 #pragma once
 
 #include "libusb_dev_cpp/usb_common.hpp"
+
 #include "libusb_dev_cpp/core/Setup_packet.hpp"
+
+#include "libusb_dev_cpp/class/usb_class.hpp"
 
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
@@ -39,7 +42,8 @@ public:
 	USB_core(const USB_core& rhs) = delete;
 	USB_core& operator=(const USB_core& rhs) = delete;
 
-	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter& tx_buf, const Buffer_adapter& rx_buf);
+	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter_tx& tx_buf, const Buffer_adapter_rx& rx_buf);
+	void set_usb_class(USB_class* const usb_class);
 	void set_descriptor_table(Descriptor_table* const desc_table);
 	void set_config_callback(const SetConfigurationCallback& callback, void* ctx)
 	{
@@ -94,8 +98,8 @@ protected:
 
 	void set_address(const uint8_t addr);
 
-	Buffer_adapter m_rx_buffer;
-	Buffer_adapter m_tx_buffer;
+	Buffer_adapter_rx m_rx_buffer;
+	Buffer_adapter_tx m_tx_buffer;
 
 	struct usb_core_event
 	{
@@ -136,6 +140,7 @@ protected:
 	std::function<void()> m_setup_complete_callback;
 
 	usb_driver_base* m_driver;
+	USB_class* m_usb_class;
 
 	Setup_packet m_setup_packet;
 

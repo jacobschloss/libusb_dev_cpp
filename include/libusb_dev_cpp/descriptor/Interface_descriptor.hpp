@@ -24,7 +24,7 @@ public:
 	typedef std::array<uint8_t, 9> Interface_descriptor_array;
 
 	bool serialize(Interface_descriptor_array* const out_array) const;
-	bool serialize(Buffer_adapter* const out_array) const override;
+	bool serialize(Buffer_adapter_tx* const out_array) const override;
 	bool deserialize(const Interface_descriptor_array& array);
 
 	size_t size() const override

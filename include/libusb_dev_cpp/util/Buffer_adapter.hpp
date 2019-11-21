@@ -9,50 +9,66 @@
 #include <cstdint>
 #include <cstddef>
 
-class Buffer_adapter_base
+#include <algorithm>
+
+template <typename T>
+class Buffer_adapter_base_T
 {
 public:
 
-	Buffer_adapter_base()
+	Buffer_adapter_base_T()
 	{
 		clear();
 	}
 
-	Buffer_adapter_base(uint8_t* const buf_ptr, const size_t buf_max)
+	Buffer_adapter_base_T(T* const buf_ptr, const size_t buf_max)
 	{
 		reset(buf_ptr, buf_max);
 	}
 
-	virtual ~Buffer_adapter_base()
+	virtual ~Buffer_adapter_base_T()
 	{
 
 	}
 
 	void reset()
 	{
-		m_buf_size  = 0;	
+		m_buf_size  = 0;
+
+		curr_ptr = m_buf_ptr;
+		rem_len  = 0;
 	}
 
-	void reset(uint8_t* const buf, const size_t maxlen)
+	void reset(T* const buf, const size_t maxlen)
 	{
 		m_buf_ptr  = buf;
 		m_buf_max  = maxlen;
 		m_buf_size = 0;
+
+		curr_ptr = m_buf_ptr;
+		rem_len  = 0;
 	}
 
-
-	size_t insert(const uint8_t buf)
+	virtual size_t insert(const T& buf)
 	{
 		return insert(&buf, 1);
 	}
 
-	size_t insert(const uint8_t* buf_ptr, const size_t len);
+	virtual size_t insert(const T* buf_ptr, const size_t len)
+	{
+		const size_t num_to_copy = std::min(len, capacity());
+		std::copy_n(buf_ptr, num_to_copy, m_buf_ptr + m_buf_size);
 
-	uint8_t* data()
+		m_buf_size += num_to_copy;
+
+		return num_to_copy;
+	}
+
+	T* data()
 	{
 		return m_buf_ptr;
 	}
-	const uint8_t* data() const
+	const T* data() const
 	{
 		return m_buf_ptr;
 	}
@@ -84,6 +100,12 @@ public:
 		m_buf_size = len;
 	}
 
+	//remaining length
+	size_t rem_len;
+
+	//current position in buffer
+	T* curr_ptr;
+
 protected:
 	
 	void clear()
@@ -91,61 +113,69 @@ protected:
 		m_buf_ptr  = nullptr;
 		m_buf_max  = 0;
 		m_buf_size = 0;
+
+		curr_ptr = nullptr;
+		rem_len  = 0;
 	}
 
-	uint8_t* m_buf_ptr;
+	T* m_buf_ptr;
 	size_t m_buf_max;
 	size_t m_buf_size;
 };
 
-class Buffer_adapter : public Buffer_adapter_base
+template <typename T>
+class Buffer_adapter_tx_T : public Buffer_adapter_base_T<T>
 {
 public:
-	Buffer_adapter()
+	Buffer_adapter_tx_T()
 	{
-		clear();
-	}
-
-	void reset()
-	{
-		Buffer_adapter_base::reset();
-		curr_ptr = m_buf_ptr;
-		rem_len  = 0;	
-	}
-
-	void reset(uint8_t* const buf, const size_t maxlen)
-	{
-		Buffer_adapter_base::reset(buf, maxlen);
-		curr_ptr = buf;
-		rem_len  = 0;	
-	}
-
-	size_t insert(const uint8_t buf)
-	{
-		return Buffer_adapter::insert(&buf, 1);
-	}
-
-	size_t insert(const uint8_t* buf, const size_t len)
-	{
-		const size_t num_inserted = Buffer_adapter_base::insert(buf, len);
 		
-		rem_len += num_inserted;
+	}
+
+	size_t insert(const T& buf) override
+	{
+		return Buffer_adapter_tx_T::insert(&buf, 1);
+	}
+
+	size_t insert(const T* buf, const size_t len) override
+	{
+		const size_t num_inserted = Buffer_adapter_base_T<T>::insert(buf, len);
+		
+		Buffer_adapter_base_T<T>::rem_len += num_inserted;
 
 		return num_inserted;
 	}
 
-	//current position in buffer
-	uint8_t* curr_ptr;
+protected:
+};
 
-	//remaining length
-	size_t   rem_len;
+template <typename T>
+class Buffer_adapter_rx_T : public Buffer_adapter_base_T<T>
+{
+public:
+	Buffer_adapter_rx_T()
+	{
+		
+	}
+
+	size_t insert(const T& buf) override
+	{
+		return Buffer_adapter_rx_T::insert(&buf, 1);
+	}
+
+	size_t insert(const T* buf, const size_t len) override
+	{
+		const size_t num_inserted = Buffer_adapter_base_T<T>::insert(buf, len);
+		
+		Buffer_adapter_base_T<T>::rem_len -= num_inserted;
+
+		return num_inserted;
+	}
 
 protected:
 
-	void clear()
-	{
-		Buffer_adapter_base::clear();
-		curr_ptr = nullptr;
-		rem_len  = 0;
-	}
 };
+
+typedef Buffer_adapter_base_T<uint8_t> Buffer_adapter_base;
+typedef Buffer_adapter_rx_T<uint8_t> Buffer_adapter_rx;
+typedef Buffer_adapter_tx_T<uint8_t> Buffer_adapter_tx;
