@@ -20,6 +20,7 @@ add_library(usb_dev_cpp
 	src/core/Setup_packet.cpp
 	src/core/Request_type.cpp
 	src/core/Get_descriptor.cpp
+	src/core/Notification_packet.cpp
 
 	src/util/Buffer_adapter.cpp
 	src/util/Desc_table_base.cpp

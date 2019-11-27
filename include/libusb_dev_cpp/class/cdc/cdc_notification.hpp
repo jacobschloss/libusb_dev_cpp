@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "libusb_dev_cpp/core/Setup_packet.hpp"
+#include "libusb_dev_cpp/core/Notification_packet.hpp"
 
 #include "libusb_dev_cpp/class/cdc/cdc.hpp"
 
@@ -22,31 +22,39 @@ public:
 
 	NETWORK_CONNECTION_NOTIFICATION()
 	{	
-		m_setup_packet.bmRequestType = 0xA1;
-		m_setup_packet.bRequest = static_cast<uint8_t>(CDC::CDC_NOTIFICATION::NETWORK_CONNECTION);
-		m_setup_packet.wValue = 0;
-		m_setup_packet.wIndex = 0;
-		m_setup_packet.wLength = 0;
+		m_notify_packet.bmRequestType = 0xA1;
+		m_notify_packet.bNotification = static_cast<uint8_t>(CDC::CDC_NOTIFICATION::NETWORK_CONNECTION);
+		m_notify_packet.wValue = 0;
+		m_notify_packet.wIndex = 0;
+		m_notify_packet.wLength = 0;
 	}
 
 	bool is_connected() const
 	{
-		return m_setup_packet.wValue == 1;
+		return m_notify_packet.wValue == 1;
 	}
 
 	void set_connection(const bool set)
 	{
 		if(set)
 		{
-			m_setup_packet.wValue = 1;
+			m_notify_packet.wValue = 1;
 		}
 		else
 		{
-			m_setup_packet.wValue = 0;
+			m_notify_packet.wValue = 0;
 		}
 	}
 
-	Setup_packet m_setup_packet;
+	Notification_packet m_notify_packet;
+
+	bool serialize(Buffer_adapter_base* const out_array) const
+	{
+		out_array->reset();
+
+		return m_notify_packet.serialize(out_array);
+	}
+
 };
 
 class SERIAL_STATE_NOTIFICATION
@@ -55,14 +63,14 @@ public:
 
 	SERIAL_STATE_NOTIFICATION()
 	{	
-		m_setup_packet.bmRequestType = 0xA1;
-		m_setup_packet.bRequest = static_cast<uint8_t>(CDC::CDC_NOTIFICATION::SERIAL_STATE);
-		m_setup_packet.wValue = 0;
-		m_setup_packet.wIndex = 0;
-		m_setup_packet.wLength = 2;
+		m_notify_packet.bmRequestType = 0xA1;
+		m_notify_packet.bNotification = static_cast<uint8_t>(CDC::CDC_NOTIFICATION::SERIAL_STATE);
+		m_notify_packet.wValue = 0;
+		m_notify_packet.wIndex = 0;
+		m_notify_packet.wLength = 2;
 	}
 
-	Setup_packet m_setup_packet;
+	Notification_packet m_notify_packet;
 
 	uint16_t bmUartState;
 	typedef std::array<uint8_t, 2> Uart_state_array;
@@ -125,9 +133,14 @@ public:
 		bmUartState = Byte_util::set_bv_16(bmUartState, set, 0);
 	}
 
-	bool serialize(Buffer_adapter_tx* const out_array) const
+	bool serialize(Buffer_adapter_base* const out_array) const
 	{
 		out_array->reset();
+
+		if(!m_notify_packet.serialize(out_array))
+		{
+			return false;
+		}
 
 		out_array->insert(Byte_util::get_b0(bmUartState));
 		out_array->insert(Byte_util::get_b1(bmUartState));
@@ -153,21 +166,26 @@ class CONNECTION_SPEED_CHANGE_NOTIFICATION
 public:
 	CONNECTION_SPEED_CHANGE_NOTIFICATION()
 	{	
-		m_setup_packet.bmRequestType = 0xA1;
-		m_setup_packet.bRequest = static_cast<uint8_t>(CDC::CDC_NOTIFICATION::CONNECTION_SPEED_CHANGE);
-		m_setup_packet.wValue = 0;
-		m_setup_packet.wIndex = 0;
-		m_setup_packet.wLength = 8;
+		m_notify_packet.bmRequestType = 0xA1;
+		m_notify_packet.bNotification = static_cast<uint8_t>(CDC::CDC_NOTIFICATION::CONNECTION_SPEED_CHANGE);
+		m_notify_packet.wValue = 0;
+		m_notify_packet.wIndex = 0;
+		m_notify_packet.wLength = 8;
 	}
 
-	Setup_packet m_setup_packet;
+	Notification_packet m_notify_packet;
 
 	uint32_t DLBitRate;
 	uint32_t ULBitRate;
 
-	bool serialize(Buffer_adapter_tx* const out_array) const
+	bool serialize(Buffer_adapter_base* const out_array) const
 	{
 		out_array->reset();
+
+		if(!m_notify_packet.serialize(out_array))
+		{
+			return false;
+		}
 
 		out_array->insert(Byte_util::get_b0(DLBitRate));
 		out_array->insert(Byte_util::get_b1(DLBitRate));

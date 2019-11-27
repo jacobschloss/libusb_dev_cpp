@@ -93,7 +93,10 @@ USB_common::USB_RESP CDC_class::handle_class_request(Setup_packet* const req, Bu
 			line.bParityType = static_cast<uint8_t>(CDC::LINE_CODING::PARITY_TYPE::NONE);
 			line.bDataBits   = static_cast<uint8_t>(CDC::LINE_CODING::DATA_BITS::EIGHT);
 
-			line.serialize(buf_to_host);
+			if(!line.serialize(buf_to_host))
+			{
+				logger->log(LOG_LEVEL::ERROR, "CDC_class", "handle_class_request: GET_LINE_CODING CDC::LINE_CODING ser failed");	
+			}
 
 			r = USB_common::USB_RESP::ACK;
 			break;

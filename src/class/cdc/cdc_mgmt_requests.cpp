@@ -9,11 +9,31 @@
 
 bool CDC::LINE_CODING::serialize(Line_coding_array* const out_array) const
 {
-	return false;
+	(*out_array)[0] = Byte_util::get_b0(dwDTERRate);
+	(*out_array)[1] = Byte_util::get_b1(dwDTERRate);
+	(*out_array)[2] = Byte_util::get_b2(dwDTERRate);
+	(*out_array)[3] = Byte_util::get_b3(dwDTERRate);
+
+	(*out_array)[4] = bCharFormat;
+	(*out_array)[5] = bParityType;
+	(*out_array)[6] = bDataBits;
+
+	return true;
 }
 bool CDC::LINE_CODING::serialize(Buffer_adapter_tx* const out_array) const
 {
-	return false;
+	out_array->reset();
+
+	out_array->insert(Byte_util::get_b0(dwDTERRate));
+	out_array->insert(Byte_util::get_b1(dwDTERRate));
+	out_array->insert(Byte_util::get_b2(dwDTERRate));
+	out_array->insert(Byte_util::get_b3(dwDTERRate));
+
+	out_array->insert(bCharFormat);
+	out_array->insert(bParityType);
+	out_array->insert(bDataBits);
+
+	return true;
 }
 
 bool CDC::LINE_CODING::deserialize(const Buffer_adapter_base* buf)

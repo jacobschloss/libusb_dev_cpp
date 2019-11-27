@@ -481,6 +481,11 @@ bool USB_core::handle_ep0_rx(const USB_common::USB_EVENTS event, const uint8_t e
 					m_tx_buffer.rem_len = m_setup_packet.wLength;
 				}
 
+				if(m_tx_buffer.rem_len != m_setup_packet.wLength)
+				{
+					Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "USB_core", "handle_ep0_rx process_request - m_tx_buffer too small, %u/%u", m_tx_buffer.rem_len, m_setup_packet.wLength);
+				}
+
 				m_control_state = USB_CONTROL_STATE::TXDATA;
 				handle_ep0_tx(event, ep | 0x80);
 			}
