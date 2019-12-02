@@ -23,6 +23,11 @@ CDC_class::~CDC_class()
 
 }
 
+void CDC_class::process()
+{
+	
+}
+
 USB_common::USB_RESP CDC_class::handle_class_request(Setup_packet* const req, Buffer_adapter_rx* const buf_from_host, Buffer_adapter_tx* const buf_to_host)
 {
 	freertos_util::logging::Logger* const logger = freertos_util::logging::Global_logger::get();

@@ -22,6 +22,8 @@ public:
 
 	USB_common::USB_RESP handle_class_request(Setup_packet* const req, Buffer_adapter_rx* const buf_from_host, Buffer_adapter_tx* const buf_to_host) override;
 
+	void process();
+
 	// bool set_configuration(const uint8_t bConfigurationValue) override;
 	// bool get_configuration(uint8_t* const bConfigurationValue) override;
 

@@ -736,7 +736,7 @@ int stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint1
 	{
 		if(epin->DIEPCTL & USB_OTG_DOEPCTL_EPENA)
 		{
-			//endpoint already active
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs::ep_write", "endpoint already active");
 			return -1;
 		}
 
@@ -749,7 +749,7 @@ int stm32_h7xx_otghs::ep_write(const uint8_t ep, const uint8_t* buf, const uint1
 		Register_util::mask_set_bits(
 			&epin->DIEPCTL,
 			USB_OTG_DIEPCTL_STALL | USB_OTG_DIEPCTL_SD0PID_SEVNFRM,
-			USB_OTG_DOEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA);
+			USB_OTG_DIEPCTL_CNAK  | USB_OTG_DIEPCTL_EPENA);
 	}
 
 	volatile uint32_t* const fifo = get_ep_fifo(ep_addr);
@@ -1300,6 +1300,7 @@ bool stm32_h7xx_otghs::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_ba
 	{
 		if(!m_tx_buffer->poll_enqueue_buffer(ep_addr, buf))
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs", "Failed to enqueue buffer");
 			return false;
 		}
 	}

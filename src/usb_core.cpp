@@ -655,6 +655,8 @@ USB_common::USB_RESP USB_core::process_request(Setup_packet* const req)
 			if(m_usb_class)
 			{
 				r = m_usb_class->handle_class_request(req, &m_rx_buffer, &m_tx_buffer);
+				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core::process_request", "CLASS request, m_tx_buffer has %u", m_tx_buffer.size());
+				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "USB_core::process_request", "CLASS request, m_tx_buffer rem_len %u", m_tx_buffer.rem_len);
 			}
 			else
 			{
