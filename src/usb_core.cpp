@@ -15,8 +15,6 @@
 
 #include "freertos_cpp_util/logging/Global_logger.hpp"
 
-#include "uart1_printf.hpp"
-
 #include <algorithm>
 #include <functional>
 

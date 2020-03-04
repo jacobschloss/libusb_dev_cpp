@@ -15,9 +15,9 @@
 
 #include "freertos_cpp_util/logging/Global_logger.hpp"
 
-#include "uart1_printf.hpp"
-
 #include <vector>
+
+#include <cinttypes>
 
 using freertos_util::logging::Global_logger;
 // using freertos_util::logging::LOG_LEVEL;
