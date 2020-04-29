@@ -423,25 +423,30 @@ bool stm32_h7xx_otghs::ep_config(const ep_cfg& ep)
 		}
 
 		OTGD->DAINTMSK |= 0x00010001;
-
-		ep_in->DIEPCTL = 
-			// USB_OTG_DIEPCTL_SD0PID_SEVNFRM            |
-			USB_OTG_DIEPCTL_SNAK                      | 
-			_VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, ep_addr) | 
-			_VAL2FLD(USB_OTG_DIEPCTL_EPTYP, 0x00)     | 
-			USB_OTG_DIEPCTL_USBAEP                    |
-			// _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, m_ep0_cfg.size);
-			_VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, mpsize);
 		
+		ep_in->DIEPTSIZ = 
+			_VAL2FLD(USB_OTG_DIEPTSIZ_PKTCNT, 0) |
+			_VAL2FLD(USB_OTG_DOEPTSIZ_XFRSIZ, m_ep0_cfg.size);
+
 		ep_out->DOEPTSIZ = 
 			_VAL2FLD(USB_OTG_DOEPTSIZ_STUPCNT, 3) |
 			USB_OTG_DOEPTSIZ_PKTCNT               |
 			_VAL2FLD(USB_OTG_DOEPTSIZ_XFRSIZ, m_ep0_cfg.size);
 		
+		// DIEPCTL0
+		ep_in->DIEPCTL = 
+			USB_OTG_DIEPCTL_SNAK                      | 
+			_VAL2FLD(USB_OTG_DIEPCTL_EPTYP, 0x00)     | 
+			USB_OTG_DIEPCTL_USBAEP                    |
+			// _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, m_ep0_cfg.size);
+			_VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, mpsize);
+		
+		// DOEPCTL
 		ep_out->DOEPCTL = 
-			// USB_OTG_DOEPCTL_SD0PID_SEVNFRM |
-			USB_OTG_DOEPCTL_EPENA          | 
-			USB_OTG_DOEPCTL_CNAK   
+			USB_OTG_DOEPCTL_EPENA                 | 
+			// _VAL2FLD(USB_OTG_DOEPCTL_EPTYP, 0x00) | //hardcoded
+			USB_OTG_DOEPCTL_CNAK
+			// _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, mpsize); | //hardcoded to match control in 0
 			;
 	}
 	else if(USB_common::is_in_ep(ep.num))
@@ -461,7 +466,7 @@ bool stm32_h7xx_otghs::ep_config(const ep_cfg& ep)
 			case usb_driver_base::EP_TYPE::ISOCHRONUS:
 			{
 				ep_in->DIEPCTL = 
-					USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
+					// USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
 					USB_OTG_DIEPCTL_SNAK                      | 
 					_VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, ep_addr) | 
 					_VAL2FLD(USB_OTG_DIEPCTL_EPTYP, 0x01)     | 
@@ -506,7 +511,7 @@ bool stm32_h7xx_otghs::ep_config(const ep_cfg& ep)
 			{
 				ep_out->DOEPCTL = 
 					USB_OTG_DOEPCTL_EPENA                     |
-					USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
+					// USB_OTG_DIEPCTL_SD0PID_SEVNFRM            | 
 					USB_OTG_DIEPCTL_CNAK                      | 
 					_VAL2FLD(USB_OTG_DOEPCTL_EPTYP, 0x01)     | 
 					USB_OTG_DIEPCTL_USBAEP                    | 
