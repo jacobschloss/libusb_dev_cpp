@@ -213,3 +213,28 @@ public:
 		return true;
 	}
 };
+
+class ResponseAvailable
+{
+	Notification_packet m_notify_packet;
+	ResponseAvailable()
+	{
+		m_notify_packet.bmRequestType = 0xA1;
+		m_notify_packet.bNotification = static_cast<uint8_t>(CDC::CDC_NOTIFICATION::RESPONSE_AVAILABLE);
+		m_notify_packet.wValue = 0;
+		m_notify_packet.wIndex = 0;
+		m_notify_packet.wLength = 0;
+	}
+
+	bool serialize(Buffer_adapter_base* const out_array) const
+	{
+		out_array->reset();
+
+		if(!m_notify_packet.serialize(out_array))
+		{
+			return false;
+		}
+
+		return true;
+	}
+};
