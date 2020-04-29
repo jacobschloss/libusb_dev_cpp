@@ -53,7 +53,7 @@ USB_common::USB_RESP CDC_class::handle_class_request(Setup_packet* const req, Bu
 
 	if(req->wLength != buf_from_host->size())
 	{
-		logger->log(LOG_LEVEL::WARN, "CDC_class", "handle_class_request: SETUP wLength and buffer length do not match");
+		logger->log(LOG_LEVEL::WARN, "CDC_class", "handle_class_request: buffer length and req wLength and do not match: %u/%u", buf_from_host->size(), req->wLength);
 	}
 
 	logger->log(LOG_LEVEL::DEBUG, "CDC_class", "handle_class_request: buf_from_host %d", buf_from_host->size());
