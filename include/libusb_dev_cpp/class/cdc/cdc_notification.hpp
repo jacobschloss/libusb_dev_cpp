@@ -19,6 +19,7 @@
 class NETWORK_CONNECTION_NOTIFICATION
 {
 public:
+	Notification_packet m_notify_packet;
 
 	NETWORK_CONNECTION_NOTIFICATION()
 	{	
@@ -46,7 +47,6 @@ public:
 		}
 	}
 
-	Notification_packet m_notify_packet;
 
 	bool serialize(Buffer_adapter_base* const out_array) const
 	{
@@ -60,6 +60,7 @@ public:
 class SERIAL_STATE_NOTIFICATION
 {
 public:
+	Notification_packet m_notify_packet;
 
 	SERIAL_STATE_NOTIFICATION()
 	{	
@@ -70,7 +71,6 @@ public:
 		m_notify_packet.wLength = 2;
 	}
 
-	Notification_packet m_notify_packet;
 
 	uint16_t bmUartState;
 	typedef std::array<uint8_t, 2> Uart_state_array;
