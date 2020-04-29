@@ -39,6 +39,7 @@ add_library(usb_dev_cpp_stm32
 
 	src/class/cdc/cdc_usb.cpp
 	src/driver/stm32/stm32_h7xx_otghs.cpp
+	src/driver/stm32/stm32_h7xx_otghs2.cpp
 	src/usb_core.cpp
 
 	src/util/EP_buffer_mgr_freertos.cpp
