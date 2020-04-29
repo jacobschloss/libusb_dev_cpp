@@ -106,7 +106,7 @@ public:
 		return (ep & 0x80) == 0;
 	}
 
-	static bool get_ep_addr(const uint8_t ep)
+	static uint8_t get_ep_addr(const uint8_t ep)
 	{
 		return ep & 0x7F;
 	}
