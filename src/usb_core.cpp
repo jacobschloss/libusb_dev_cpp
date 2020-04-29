@@ -282,6 +282,11 @@ bool USB_core::handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep)
 		ret = m_event_queue.push_back_isr(core_evt);
 	}
 
+	if(!ret)
+	{
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "USB_core", "handle_event queue push failed");
+	}
+
 	return ret;
 }
 
