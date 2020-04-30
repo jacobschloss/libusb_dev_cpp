@@ -64,15 +64,27 @@ void stm32_h7xx_otghs2::core_reset()
 //eg 0, 1, 2, 3
 bool stm32_h7xx_otghs2::config_ep_tx_fifo(const uint8_t ep, const size_t len)
 {
+	Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2::config_ep_tx_fifo", "");
+
+	size_t fifo_len = len;
+
 	if(ep != 0)
 	{
 		if(ep > MAX_NUM_EP)
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs2::config_ep_tx_fifo", "ep %d > MAX_NUM_EP", ep);
 			return false;
 		}
 
-		if((len < 64) || (len > 2048))
+		if(len < 64)
 		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::WARN, "stm32_h7xx_otghs2::config_ep_tx_fifo", "ep %d wanted len %d, but min is 64, setting to 64", ep, len);
+			fifo_len = 64;
+		}
+
+		if(len > 2048)
+		{
+			Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs2::config_ep_tx_fifo", "ep %d wanted len %d, but greater than 2048", ep, len);
 			return false;
 		}
 
@@ -87,7 +99,7 @@ bool stm32_h7xx_otghs2::config_ep_tx_fifo(const uint8_t ep, const size_t len)
 			if(i == ep)
 			{
 				//length in 32bit
-				const size_t len32 = (len+3U) / 4U;
+				const size_t len32 = (fifo_len+3U) / 4U;
 
 				//fsa must be 32bit aligned
 				if((fsa % 4) != 0)
@@ -97,9 +109,11 @@ bool stm32_h7xx_otghs2::config_ep_tx_fifo(const uint8_t ep, const size_t len)
 
 				if((fsa + len32*4U) > MAX_FIFO_LEN_U8)
 				{
+					Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs2::config_ep_tx_fifo", "ep %d could not find spot to add", ep);
 					return false;
 				}
 
+				Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2::config_ep_tx_fifo", "ep %d: TXFD: 0x%04X, TXSA: 0x%04X", ep, len32, fsa);
 				OTG->DIEPTXF[i-1] = _VAL2FLD(USB_OTG_DIEPTXF_INEPTXFD, len32) | _VAL2FLD(USB_OTG_DIEPTXF_INEPTXSA, fsa);
 			}
 			else
