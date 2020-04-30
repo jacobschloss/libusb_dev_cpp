@@ -411,6 +411,8 @@ bool stm32_h7xx_otghs2::set_address(const uint8_t addr)
 
 bool stm32_h7xx_otghs2::ep_config(const ep_cfg& ep)
 {
+	Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2::ep_config", "config ep 0x%02X", ep.num);
+	
 	const uint8_t ep_addr = USB_common::get_ep_addr(ep.num);
 
 	if(ep_addr == 0)
@@ -482,9 +484,6 @@ bool stm32_h7xx_otghs2::ep_config(const ep_cfg& ep)
 			return false;
 		}
 
-		//enable tx interrupt
-		OTGD->DAINTMSK |= _VAL2FLD(USB_OTG_DAINTMSK_IEPM, 0x0001 << ep_addr);
-
 		switch(ep.type)
 		{
 			case usb_driver_base::EP_TYPE::ISOCHRONUS:
@@ -525,6 +524,9 @@ bool stm32_h7xx_otghs2::ep_config(const ep_cfg& ep)
 				return false;
 			}
 		}
+		
+		//enable tx interrupt
+		OTGD->DAINTMSK |= _VAL2FLD(USB_OTG_DAINTMSK_IEPM, 0x0001 << ep_addr);
 	}
 	else
 	{
@@ -569,6 +571,8 @@ bool stm32_h7xx_otghs2::ep_config(const ep_cfg& ep)
 				return false;
 			}
 		}
+
+		// OTGD->DAINTMSK |= _VAL2FLD(USB_OTG_DAINTMSK_OEPM, 0x0001 << ep_addr);
 	}
 
 	return true;
@@ -1368,6 +1372,8 @@ bool stm32_h7xx_otghs2::handle_iepintx(const USB_common::Event_callback& func)
 
 	if(DIEPINT & USB_OTG_DIEPINT_NAK)//NAK is tx or rx
 	{
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2", "USB_OTG_DIEPINT_NAK on ep %d", ep_num);
+
 		epin->DIEPINT = USB_OTG_DIEPINT_NAK;
 	}
 	// if(DIEPINT & USB_OTG_DIEPINT_BERR)//b12 is reserved
@@ -1402,6 +1408,7 @@ bool stm32_h7xx_otghs2::handle_iepintx(const USB_common::Event_callback& func)
 	}
 	if(DIEPINT & USB_OTG_DIEPINT_ITTXFE)
 	{
+		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2", "USB_OTG_DIEPINT_ITTXFE on ep %d", ep_num);
 		epin->DIEPINT = USB_OTG_DIEPINT_ITTXFE;
 	}
 	if(DIEPINT & USB_OTG_DIEPINT_TOC)
