@@ -22,8 +22,24 @@
 using freertos_util::logging::Global_logger;
 // using freertos_util::logging::LOG_LEVEL;
 
+
 namespace
 {
+	class Scoped_ISR_Mask
+	{
+	public:
+		Scoped_ISR_Mask(IRQn_Type isr_num) : m_isr_num(isr_num)
+		{
+			HAL_NVIC_DisableIRQ(m_isr_num);
+		}
+		~Scoped_ISR_Mask()
+		{
+			HAL_NVIC_EnableIRQ(m_isr_num);
+		}
+	protected:
+		const IRQn_Type m_isr_num;
+	};
+	
 	static volatile USB_OTG_GlobalTypeDef* const OTG  = reinterpret_cast<volatile USB_OTG_GlobalTypeDef*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_GLOBAL_BASE);
 	static volatile USB_OTG_DeviceTypeDef* const OTGD = reinterpret_cast<volatile USB_OTG_DeviceTypeDef*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_DEVICE_BASE);
 	static volatile uint32_t* const OTGPCTL           = reinterpret_cast<volatile uint32_t*>(USB_OTG_HS_PERIPH_BASE + USB_OTG_PCGCCTL_BASE);
@@ -1294,14 +1310,16 @@ bool stm32_h7xx_otghs2::get_tx_ep_config(const uint8_t addr, ep_cfg* const out_e
 //this might be better as a stream thing rather than buffer exchange
 Buffer_adapter_base* stm32_h7xx_otghs2::wait_rx_buffer(const uint8_t ep_num)
 {
-	return m_rx_buffer->wait_dequeue_buffer(ep_num);
+	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
+
+	return m_rx_buffer->wait_dequeue_buffer(ep_addr);
 }
 //application returns rx buffer to driver. will allow reception to continue in event of buffer underrun
 void stm32_h7xx_otghs2::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_base* const buf)
 {
 	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
 	
-	HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
+	Scoped_ISR_Mask otg_mask(OTG_HS_IRQn);
 
 	m_rx_buffer->release_buffer(ep_addr, buf);
 
@@ -1318,8 +1336,6 @@ void stm32_h7xx_otghs2::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_b
 
 		get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 	}
-
-	HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
 }
 
 //application wait for usable tx buffer
@@ -1334,7 +1350,7 @@ bool stm32_h7xx_otghs2::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_b
 {
 	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
 
-	HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
+	Scoped_ISR_Mask otg_mask(OTG_HS_IRQn);
 
 	//TODO: we may need to mask usb isr here
 	//it might be safe for now, since we only do this if the ep has no loaded IN buffer
@@ -1354,8 +1370,6 @@ bool stm32_h7xx_otghs2::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_b
 			return false;
 		}
 	}
-
-	HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
 
 	return true;
 }
