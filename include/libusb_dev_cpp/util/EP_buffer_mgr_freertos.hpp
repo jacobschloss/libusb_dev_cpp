@@ -11,6 +11,8 @@
 #include "libusb_dev_cpp/util/EP_buffer_array.hpp"
 #include "libusb_dev_cpp/util/EP_buffer_mgr_base.hpp"
 
+#include <atomic>
+
 template<size_t NUM_EP, size_t BUFFER_DEPTH, size_t BUFFER_LEN, size_t BUFFER_ALLIGN>
 class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 {
@@ -18,7 +20,10 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 	
 	EP_buffer_mgr_freertos()
 	{
-		m_active_buffer.fill(nullptr);
+		for(size_t i = 0; i < m_active_buffer.size(); i++)
+		{
+			std::atomic_init<Buffer_adapter_base*>(&m_active_buffer[i], nullptr);
+		}
 	}
 
 	//both
@@ -244,7 +249,7 @@ class EP_buffer_mgr_freertos : public EP_buffer_mgr_base
 			NUM_EP> m_ep_buffer;
 
 		std::array<
-			Buffer_adapter_base*,
+			std::atomic<Buffer_adapter_base*>,
 			NUM_EP> m_active_buffer;
 
 		std::array<

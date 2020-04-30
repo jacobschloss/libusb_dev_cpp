@@ -1301,6 +1301,8 @@ void stm32_h7xx_otghs2::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_b
 {
 	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
 	
+	HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
+
 	m_rx_buffer->release_buffer(ep_addr, buf);
 
 	//TODO: we may need to mask usb isr here
@@ -1316,6 +1318,8 @@ void stm32_h7xx_otghs2::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_b
 
 		get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
 	}
+
+	HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
 }
 
 //application wait for usable tx buffer
@@ -1329,6 +1333,8 @@ Buffer_adapter_base* stm32_h7xx_otghs2::wait_tx_buffer(const uint8_t ep_num)
 bool stm32_h7xx_otghs2::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_base* const buf)
 {
 	const uint8_t ep_addr = USB_common::get_ep_addr(ep_num);
+
+	HAL_NVIC_DisableIRQ(OTG_HS_IRQn);
 
 	//TODO: we may need to mask usb isr here
 	//it might be safe for now, since we only do this if the ep has no loaded IN buffer
@@ -1348,6 +1354,8 @@ bool stm32_h7xx_otghs2::enqueue_tx_buffer(const uint8_t ep_num, Buffer_adapter_b
 			return false;
 		}
 	}
+
+	HAL_NVIC_EnableIRQ(OTG_HS_IRQn);
 
 	return true;
 }
