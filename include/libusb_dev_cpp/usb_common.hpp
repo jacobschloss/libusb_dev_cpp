@@ -45,7 +45,7 @@ public:
 		WAIT_DATA_OUT,
 		WAIT_DATA_IN,
 		WAIT_STATUS_OUT,
-		WAIT_STATUS_IN,
+		WAIT_STATUS_IN
 	};
 
 	enum class USB_RESP
