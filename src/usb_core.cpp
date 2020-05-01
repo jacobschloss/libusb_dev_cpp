@@ -4,9 +4,9 @@
  * @license Licensed under the 3-Clause BSD license. See LICENSE for details
 */
 
-#include "libusb_dev_cpp/usb_core.hpp"
+#include "libusb_dev_cpp/core/usb_core.hpp"
 
-#include "libusb_dev_cpp/usb_common.hpp"
+#include "libusb_dev_cpp/core/usb_common.hpp"
 
 #include "libusb_dev_cpp/descriptor/Device_descriptor.hpp"
 #include "libusb_dev_cpp/descriptor/Configuration_descriptor.hpp"

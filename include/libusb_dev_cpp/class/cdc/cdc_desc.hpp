@@ -8,7 +8,7 @@
 
 #include "libusb_dev_cpp/class/cdc/cdc.hpp"
 
-#include "libusb_dev_cpp/usb_common.hpp"
+#include "libusb_dev_cpp/core/usb_common.hpp"
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
 

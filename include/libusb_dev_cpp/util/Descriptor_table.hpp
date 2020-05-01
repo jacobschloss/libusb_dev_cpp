@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "libusb_dev_cpp/usb_common.hpp"
+#include "libusb_dev_cpp/core/usb_common.hpp"
 
 #include "libusb_dev_cpp/descriptor/Device_descriptor.hpp"
 
