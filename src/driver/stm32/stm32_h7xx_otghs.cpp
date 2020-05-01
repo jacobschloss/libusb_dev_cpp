@@ -15,8 +15,6 @@
 
 #include "freertos_cpp_util/logging/Global_logger.hpp"
 
-#include <vector>
-
 #include <cinttypes>
 
 using freertos_util::logging::Global_logger;
