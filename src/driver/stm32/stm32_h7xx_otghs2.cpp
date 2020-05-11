@@ -948,7 +948,7 @@ void stm32_h7xx_otghs2::poll(const USB_common::Event_callback& func)
 		return;
 	}
 
-	Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::INFO, "stm32_h7xx_otghs2", "USB_OTG_GINTSTS: 0x%08X, USB_OTG_GINTMSK: 0x%08X", GINTSTS, GINTMSK);
+	Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2", "USB_OTG_GINTSTS: 0x%08X, USB_OTG_GINTMSK: 0x%08X", GINTSTS, GINTMSK);
 
 	//Mode mismatch error
 	if(GINTSTS & USB_OTG_GINTSTS_MMIS)
