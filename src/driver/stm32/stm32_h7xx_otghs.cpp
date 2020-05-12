@@ -1408,8 +1408,11 @@ bool stm32_h7xx_otghs::handle_iepintx(USB_common::USB_EVENTS* const out_event, u
 			get_ep_in(ep_num)->DIEPCTL |= (USB_OTG_DOEPCTL_SNAK);
 		}
 
-		event = USB_common::USB_EVENTS::EP_TX;
-		ep_num = ep_num | 0x80;
+		if(ep_num == 0)
+		{
+			event = USB_common::USB_EVENTS::EP_TX;
+			ep_num = ep_num | 0x80;
+		}
 	}
 	else
 	{
@@ -1521,7 +1524,10 @@ bool stm32_h7xx_otghs::handle_oepintx(USB_common::USB_EVENTS* const out_event, u
 		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_GINTSTS_OEPINT DOEPINT[%d] XFRC 0x%08X", ep_num, DOEPINT);
 		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs", "USB_OTG_DOEPINT_XFRC event EP_RX");
 
-		event = USB_common::USB_EVENTS::EP_RX;
+		if(ep_num == 0)
+		{
+			event = USB_common::USB_EVENTS::EP_RX;
+		}
 	}
 	else
 	{

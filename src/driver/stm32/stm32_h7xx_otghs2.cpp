@@ -865,6 +865,13 @@ int stm32_h7xx_otghs2::ep_read(const uint8_t ep, uint8_t* const buf, const uint1
 		return 0;
 	}
 
+	if(buf == nullptr)
+	{
+		freertos_util::logging::Logger* const logger = freertos_util::logging::Global_logger::get();
+		logger->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs2", "ep_read buf is null");
+		return 0;
+	}
+
 	for(size_t i = 0; i < max_len; i += 4)
 	{
 		const uint32_t temp = *get_ep_fifo(0);
@@ -1145,6 +1152,9 @@ void stm32_h7xx_otghs2::poll(const USB_common::Event_callback& func)
 								Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::ERROR, "stm32_h7xx_otghs2", "USB_OTG_GINTSTS_RXFLVL rx buffer allocation fail");
 								m_rx_buffer->set_buffer(ep_num, nullptr);
 								get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_SNAK);
+
+								//if no curr_buf, mask USB_OTG_GINTSTS_RXFLVL
+								Register_util::clear_bits(&OTG->GINTMSK, USB_OTG_GINTSTS_RXFLVL);
 							}
 						}
 						else
@@ -1332,7 +1342,11 @@ void stm32_h7xx_otghs2::release_rx_buffer(const uint8_t ep_num, Buffer_adapter_b
 		
 		m_rx_buffer->set_buffer(ep_addr, act_buf);
 
+		//clear the NAK, enable EP
 		get_ep_out(ep_num)->DOEPCTL |= (USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+
+		//enable the RXFLVL ISR
+		Register_util::set_bits(&OTG->GINTMSK, USB_OTG_GINTSTS_RXFLVL);
 	}
 }
 
@@ -1472,7 +1486,10 @@ bool stm32_h7xx_otghs2::handle_iepintx(const USB_common::Event_callback& func)
 			get_ep_in(ep_num)->DIEPCTL |= (USB_OTG_DOEPCTL_SNAK);
 		}
 
-		func(USB_common::USB_EVENTS::EP_TX, 0x80 | ep_num);
+		if(ep_num == 0)
+		{
+			func(USB_common::USB_EVENTS::EP_TX, 0x80 | ep_num);
+		}
 	}
 	else
 	{
@@ -1581,7 +1598,10 @@ bool stm32_h7xx_otghs2::handle_oepintx(const USB_common::Event_callback& func)
 		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2", "handle_oepintx USB_OTG_GINTSTS_OEPINT DOEPINT[%d] XFRC 0x%08X", ep_num, DOEPINT);
 		Global_logger::get()->log(freertos_util::logging::LOG_LEVEL::DEBUG, "stm32_h7xx_otghs2", "handle_oepintx USB_OTG_DOEPINT_XFRC event EP_RX");
 
-		func(USB_common::USB_EVENTS::EP_RX, ep_num);
+		if(ep_num == 0)
+		{
+			func(USB_common::USB_EVENTS::EP_RX, ep_num);
+		}
 	}
 	else
 	{
