@@ -70,3 +70,10 @@ if(${BUILD_USB_DEV_CPP_TESTS})
 		googletest
 	)
 endif(${BUILD_USB_DEV_CPP_TESTS})
+
+if(DEFINED Doxygen::doxygen)
+	doxygen_add_docs(usb_dev_cpp_docs
+		include/
+		src/
+	)
+endif()
