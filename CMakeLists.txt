@@ -12,15 +12,16 @@ add_library(usb_dev_cpp
 	src/class/cdc/cdc_mgmt_requests.cpp
 	src/class/cdc/cdc_notification.cpp
 
-
 	src/class/dfu/dfu.cpp
+
 
 	src/driver/usb_driver_base.cpp
 
-	src/core/Setup_packet.cpp
-	src/core/Request_type.cpp
 	src/core/Get_descriptor.cpp
 	src/core/Notification_packet.cpp
+	src/core/Request_type.cpp
+	src/core/Setup_packet.cpp
+	src/core/usb_core.cpp
 
 	src/util/Buffer_adapter.cpp
 	src/util/Desc_table_base.cpp
@@ -40,7 +41,6 @@ add_library(usb_dev_cpp_stm32
 	src/class/cdc/cdc_usb.cpp
 	src/driver/stm32/stm32_h7xx_otghs.cpp
 	src/driver/stm32/stm32_h7xx_otghs2.cpp
-	src/usb_core.cpp
 
 	src/util/EP_buffer_mgr_freertos.cpp
 )

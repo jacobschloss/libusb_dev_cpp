@@ -25,6 +25,8 @@ class USB_core
 public:
 
 	typedef std::function<bool (void*, const uint16_t)> SetConfigurationCallback;
+	typedef std::function<void (void*)> SofCallback;
+	typedef std::function<void (void*)> ResetCallback;
 
 	enum class USB_CMD
 	{
@@ -45,12 +47,25 @@ public:
 	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter_tx& tx_buf, const Buffer_adapter_rx& rx_buf);
 	void set_usb_class(USB_class* const usb_class);
 	void set_descriptor_table(Descriptor_table* const desc_table);
+	
 	void set_config_callback(const SetConfigurationCallback& callback, void* ctx)
 	{
 		m_set_config_callback_func = callback;
 		m_set_config_callback_ctx = ctx;
 	}
 	
+	void set_sof_callback(const SofCallback& callback, void* ctx)
+	{
+		m_sof_callback_func = callback;
+		m_sof_callback_ctx = ctx;
+	}
+
+	void set_reset_callback(const ResetCallback& callback, void* ctx)
+	{
+		m_reset_callback_func = callback;
+		m_reset_callback_ctx = ctx;
+	}
+
 	//poll driver
 	bool poll_driver();
 
@@ -152,6 +167,12 @@ protected:
 
 	void* m_set_config_callback_ctx;
 	SetConfigurationCallback m_set_config_callback_func;
+
+	void* m_sof_callback_ctx;
+	SofCallback m_sof_callback_func;
+
+	void* m_reset_callback_ctx;
+	ResetCallback m_reset_callback_func;
 
 	USB_common::Event_callback m_usb_core_handle_event;
 };

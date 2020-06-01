@@ -47,6 +47,12 @@ bool USB_core::initialize(usb_driver_base* const driver, const uint8_t ep0size, 
 	m_set_config_callback_ctx = nullptr;
 	m_set_config_callback_func = nullptr;
 
+	m_sof_callback_ctx = nullptr;
+	m_sof_callback_func = nullptr;
+
+	m_reset_callback_ctx = nullptr;
+	m_reset_callback_func = nullptr;
+
 	m_usb_core_handle_event = std::bind(&USB_core::handle_event, this, std::placeholders::_1, std::placeholders::_2);
 
 	return true;
@@ -104,6 +110,11 @@ bool USB_core::handle_reset()
 	ep0.type = usb_driver_base::EP_TYPE::CONTROL;
 	m_driver->ep_config(ep0);
 
+	if(m_reset_callback_func)
+	{
+		m_reset_callback_func(m_reset_callback_ctx);
+	}
+
 	return true;
 }
 
@@ -131,6 +142,11 @@ bool USB_core::handle_enum_done()
 
 bool USB_core::handle_sof()
 {
+	if(m_sof_callback_func)
+	{
+		m_sof_callback_func(m_sof_callback_ctx);
+	}
+
 	return true;
 }
 
