@@ -27,7 +27,8 @@ public:
 		GET_DESCRIPTOR    = 0x06,
 		SET_DESCRIPTOR    = 0x07,
 		GET_CONFIGURATION = 0x08,
-		SET_CONFIGURATION = 0x09
+		SET_CONFIGURATION = 0x09,
+		SET_SEL           = 0x30
 	};
 
 	enum class INTERFACE_REQUEST : uint8_t
@@ -47,20 +48,50 @@ public:
 		SYNC_FRAME    = 0x0A
 	};
 
-	enum class FEATURE_SELECTOR
+	// USB 3.2 Revision 1.0 Table 9-7
+	enum class FEATURE_SELECTOR_ENDPOINT : uint8_t
 	{
-		ENDPOINT_HALT        = 0,
-		DEVICE_REMOTE_WAKEUP = 1,
-		TEST_MODE            = 2
+		ENDPOINT_HALT = 0,
 	};
 
+	// USB 3.2 Revision 1.0 Table 9-7
+	enum class FEATURE_SELECTOR_INTERFACE : uint8_t
+	{
+		FUNCTION_SUSPEND = 0,
+	};
+
+	// USB 3.2 Revision 1.0 Table 9-7
+	enum class FEATURE_SELECTOR_DEVICE : uint8_t
+	{
+		DEVICE_REMOTE_WAKEUP = 1,
+		TEST_MODE            = 2,
+		b_hnp_enable         = 3,
+		a_hnp_support        = 4,
+		a_alt_hnp_support    = 5,
+		WUSB_DEVICE          = 6,
+		U1_ENABLE            = 48,
+		U2_ENABLE            = 49,
+		LTM_ENABLE           = 50,
+		B3_NTF_HOST_REL      = 51, // Reserved for OTG
+		B3_RSP_ENABLE        = 52, // Reserved for OTG
+		LDM_ENABLE           = 53
+	};
+
+	// USB 2.0 Table 9-7 Test Mode Selectors
 	enum class TEST_MODE_SELECTOR
 	{
 		TEST_J            = 0x01,
-		TSET_K            = 0x02,
+		TEST_K            = 0x02,
 		TEST_SE0_NAK      = 0x03,
 		TEST_PACKET       = 0x04,
-		TEST_FORCE_ENABLE = 0x05,
+		TEST_FORCE_ENABLE = 0x05
+	};
+
+	// USB 3.2 Revision 1.0 Table 9-8
+	enum class STANDARD_STATUS_TYPE : uint8_t
+	{
+		STANDARD_STATUS = 0x00,
+		PTM_STATUS      = 0x01
 	};
 
 	bool serialize(Setup_packet_array* const out_array);

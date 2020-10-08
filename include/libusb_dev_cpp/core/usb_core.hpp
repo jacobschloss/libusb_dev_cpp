@@ -44,8 +44,10 @@ public:
 	USB_core(const USB_core& rhs) = delete;
 	USB_core& operator=(const USB_core& rhs) = delete;
 
-	bool initialize(usb_driver_base* const driver, const uint8_t ep0size, const Buffer_adapter_tx& tx_buf, const Buffer_adapter_rx& rx_buf);
+	bool initialize(usb_driver_base* const driver, const Buffer_adapter_tx& tx_buf, const Buffer_adapter_rx& rx_buf);
 	void set_usb_class(USB_class* const usb_class);
+	void add_usb_class(USB_class* const usb_class);
+	USB_class* find_usb_class(const uint8_t index);
 	void set_descriptor_table(Descriptor_table* const desc_table);
 	
 	void set_config_callback(const SetConfigurationCallback& callback, void* ctx)
@@ -69,10 +71,15 @@ public:
 	//poll driver
 	bool poll_driver();
 
-	//handle events
+	//handle event from event queue if present
 	bool poll_event_loop();
+	//handle event from event queue if present, optionally wait for event
 	bool poll_event_loop(const bool wait);
 
+	//poll event loop using this event, do not check queue
+	bool poll_event_loop(const USB_common::USB_EVENTS evt, const uint8_t ep);
+
+	//wait for event then run
 	bool wait_event_loop();
 
 	bool enable();
@@ -86,9 +93,16 @@ public:
 		return m_driver;
 	}
 
-protected:
+	const USB_common::Event_callback& get_event_callback() const
+	{
+		return m_usb_core_handle_event;
+	}
 
 	bool handle_event(const USB_common::USB_EVENTS evt, const uint8_t ep);
+
+	bool handle_event_isr(const USB_common::USB_EVENTS evt, const uint8_t ep);
+
+protected:
 
 	bool handle_reset();
 	bool handle_enum_done();
@@ -155,7 +169,7 @@ protected:
 	std::function<void()> m_setup_complete_callback;
 
 	usb_driver_base* m_driver;
-	USB_class* m_usb_class;
+	Intrusive_list m_usb_class_list;
 
 	Setup_packet m_setup_packet;
 
@@ -176,3 +190,4 @@ protected:
 
 	USB_common::Event_callback m_usb_core_handle_event;
 };
+
