@@ -1,3 +1,5 @@
+project(libusb_dev_cpp)
+
 add_library(usb_dev_cpp
 	src/descriptor/Binary_object_store.cpp
 	src/descriptor/Configuration_descriptor.cpp
