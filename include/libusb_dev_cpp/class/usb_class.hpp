@@ -12,7 +12,9 @@
 
 #include "libusb_dev_cpp/util/Buffer_adapter.hpp"
 
-class USB_class
+#include "common_util/Intrusive_list.hpp"
+
+class USB_class : public Intrusive_list_node
 {
 public:
 
@@ -21,5 +23,18 @@ public:
 
 	virtual USB_common::USB_RESP handle_class_request(Setup_packet* const req, Buffer_adapter_rx* const buf_from_host, Buffer_adapter_tx* const buf_to_host) = 0;
 
+
+	void set_index(uint8_t idx)
+	{
+		m_idx = idx;
+	}
+
+	uint8_t get_index() const
+	{
+		return m_idx;
+	}
+
 protected:
+
+	uint8_t m_idx;
 };

@@ -17,11 +17,21 @@ namespace CDC
 	constexpr static uint8_t COMM_DEVICE_CLASS_CODE    = 0x02;
 	constexpr static uint8_t COMM_INTERFACE_CLASS_CODE = 0x02;
 
-	enum class COMM_INTERFACE_SUBCLASS_CODE : uint8_t
+	enum class COMM_CLASS_SUBCLASS_CODE : uint8_t
 	{
-		DLCM = 0x01,
-		ACM  = 0x02,
-		TCM  = 0x03
+		DLCM   = 0x01, // USBPSTN
+		ACM    = 0x02, // USBPSTN
+		TCM    = 0x03, // USBPSTN
+		MCCM   = 0x04, // USBISDN
+		CAPICM = 0x05, // USBISDN
+		ENCM   = 0x06, // USBECM
+		ATM    = 0x07, // USBATM
+		WHCM   = 0x08, // USBWMC
+		DM     = 0x09, // USBWMC
+		MDLM   = 0x0A, // USBWMC
+		OBEX   = 0x0B, // USBWMC
+		EEM    = 0x0C, // USBEEM
+		NCM    = 0x0D  // USBNCM
 	};
 
 	enum class COMM_CLASS_PROTO_CODE : uint8_t

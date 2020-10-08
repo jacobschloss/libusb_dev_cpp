@@ -36,11 +36,14 @@ public:
 		UNCONF
 	};
 
-	struct ep_cfg
+	class ep_cfg
 	{
+	public:
 		uint8_t num;
 		size_t  size;
 		EP_TYPE type;
+
+		bool is_valid() const;
 	};
 
 	struct Data_packet
@@ -95,8 +98,6 @@ public:
 
 	virtual bool initialize() = 0;
 
-	virtual void get_info() = 0;
-
 	virtual bool enable() = 0;
 	virtual bool disable() = 0;
 
@@ -114,6 +115,18 @@ public:
 
 	virtual int ep_write(const uint8_t ep, const uint8_t* buf, const uint16_t len) = 0;
 	virtual int ep_read(const uint8_t ep, uint8_t* const buf, const uint16_t max_len) = 0;
+
+	//try to dequeue a tx buffer and start a read
+	virtual bool ep_start_write(const uint8_t ep)
+	{
+		return false;
+	}
+
+	//try to allocate an rx buffer and start a read
+	virtual bool ep_start_read(const uint8_t ep, const uint16_t len)
+	{
+		return false;
+	}
 
 	virtual uint16_t get_frame_number() = 0;
 	virtual size_t get_serial_number(uint8_t* const buf, const size_t maxlen) = 0;
@@ -198,7 +211,34 @@ public:
 	virtual bool handle_reset();
 	virtual bool handle_enum_done();
 
+	virtual bool get_u1_sleep()
+	{
+		return u1_sleep_state;
+	}
+	virtual bool set_u1_sleep(const bool en)
+	{
+		return false;
+	}
+	virtual bool set_u1_sleep_timeout(const uint8_t val)
+	{
+		return false;
+	}
+	virtual bool get_u2_sleep()
+	{
+		return u2_sleep_state;
+	}
+	virtual bool set_u2_sleep(const bool en)
+	{
+		return false;
+	}
+	virtual bool set_u2_sleep_timeout(const uint16_t val)
+	{
+		return false;
+	}
 protected:
+
+	bool u1_sleep_state;
+	bool u2_sleep_state;
 
 	EP_buffer_mgr_base* m_ep0_buffer;
 	EP_buffer_mgr_base* m_tx_buffer;

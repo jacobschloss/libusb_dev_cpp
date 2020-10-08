@@ -4,4 +4,4 @@
  * @license Licensed under the 3-Clause BSD license. See LICENSE for details
 */
 
-#include "libusb_dev_cpp/util/Endpoint_descriptor.hpp"
+#include "libusb_dev_cpp/util/Endpoint_desc_table.hpp"

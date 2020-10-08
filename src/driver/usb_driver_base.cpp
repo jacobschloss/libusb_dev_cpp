@@ -6,6 +6,30 @@
 
 #include "libusb_dev_cpp/driver/usb_driver_base.hpp"
 
+bool usb_driver_base::ep_cfg::is_valid() const
+{
+	bool valid = true;
+	switch(type)
+	{
+		case EP_TYPE::CONTROL:
+		case EP_TYPE::ISOCHRONUS:
+		case EP_TYPE::INTERRUPT:
+		case EP_TYPE::BULK:
+		{
+			valid = true;
+			break;
+		}
+		case EP_TYPE::UNCONF:
+		default:
+		{
+			valid = false;
+			break;
+		}
+	}
+
+	return valid;
+}
+
 usb_driver_base::usb_driver_base()
 {
 	m_event_callbacks.fill(nullptr);

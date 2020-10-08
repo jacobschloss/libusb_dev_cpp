@@ -17,8 +17,6 @@ public:
 
 	bool initialize() override;
 
-	void get_info() override;
-
 	bool enable() override;
 	bool disable() override;
 

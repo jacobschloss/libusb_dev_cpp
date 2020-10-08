@@ -9,6 +9,7 @@
 #include "libusb_dev_cpp/core/usb_common.hpp"
 
 #include "libusb_dev_cpp/descriptor/Device_descriptor.hpp"
+#include "libusb_dev_cpp/descriptor/Binary_object_store.hpp"
 
 #include "libusb_dev_cpp/util/Config_desc_table.hpp"
 #include "libusb_dev_cpp/util/Iface_desc_table.hpp"
@@ -82,6 +83,11 @@ public:
 		m_endpoint_table.set_config(idx, desc);
 	}
 
+	void set_endpoint_descriptor(const std::shared_ptr<Endpoint_descriptor>& desc, const uint8_t idx)
+	{
+		m_endpoint_table.set_config(idx, desc);
+	}
+
 	Endpoint_desc_table::Endpoint_desc_ptr get_endpoint_descriptor(const uint8_t idx)
 	{
 		return m_endpoint_table.get_config(idx);
@@ -129,6 +135,22 @@ public:
 	{
 		m_other_desc.push_back(other_desc);
 	}
+
+	void set_bos(const BOS_store::BOS_store_ptr& bos)
+	{
+		m_bos_ptr = bos;
+	}
+	
+	BOS_store::BOS_store_ptr get_bos()
+	{
+		return m_bos_ptr;
+	}
+
+	BOS_store::BOS_store_const_ptr get_bos() const
+	{
+		return m_bos_ptr;
+	}
+
 #if 0
 	bool set_descriptor(const Desc_base_ptr& desc, const USB_common::DESCRIPTOR_TYPE type, const uint8_t idx)
 	{
@@ -254,6 +276,9 @@ protected:
 	Endpoint_desc_table m_endpoint_table;
 	Iface_desc_table m_iface_table;
 	Multilang_string_desc_table m_string_table;
+
+	//pointer to root BOS object
+	BOS_store::BOS_store_ptr m_bos_ptr;
 
 	std::list< std::shared_ptr<Descriptor_base> > m_other_desc;
 };

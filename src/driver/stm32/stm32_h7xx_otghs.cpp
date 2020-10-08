@@ -215,11 +215,6 @@ bool stm32_h7xx_otghs::initialize()
 	return true;
 }
 
-void stm32_h7xx_otghs::get_info()
-{
-
-}
-
 bool stm32_h7xx_otghs::enable()
 {
 	//reset usb if it is on
