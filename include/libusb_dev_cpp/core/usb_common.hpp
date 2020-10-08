@@ -160,21 +160,21 @@ public:
 		CONFIGURATION_SUMMARY       = 0x10  // Summarizes configuration information for a function implemented by the device
 	};
 
-	enum class CONTROL_EP_SIZE
+	enum class CONTROL_EP_SIZE : uint8_t
 	{
 		USB10 = 8,
 		USB11 = 64,
 		USB20 = 64,
-		USB30 = 512,
-		USB31 = 512,
-		USB32 = 512
+		USB30 = 9, // 2^9 = 512
+		USB31 = 9, // 2^9 = 512
+		USB32 = 9  // 2^9 = 512
 	};
 
-	enum class BULK_EP_SIZE
+	enum class BULK_EP_SIZE : uint16_t
 	{
 		USB10 = 8,
 		USB11 = 64,
-		USB20 = 64,
+		USB20 = 512,
 		USB30 = 1024,
 		USB31 = 1024,
 		USB32 = 1024
