@@ -7,6 +7,7 @@
 #pragma once
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+#include "libusb_dev_cpp/core/usb_common.hpp"
 
 class String_descriptor_base : public Descriptor_base
 {
@@ -34,7 +35,7 @@ protected:
 		(*buf)[1] = 0;
 	}
 
-	static constexpr uint8_t bDescriptorType = 0x03;
+	static constexpr uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::STRING);
 	static constexpr size_t str_len_max = 126;
 	char const * m_str;
 };

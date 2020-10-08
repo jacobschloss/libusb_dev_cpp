@@ -7,8 +7,7 @@
 #pragma once
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
-
-#include "common_util/Byte_util.hpp"
+#include "libusb_dev_cpp/core/usb_common.hpp"
 
 #include <array>
 
@@ -20,6 +19,27 @@ public:
 
 	typedef std::array<uint8_t, 18> Device_descriptor_array;
 
+	enum class DEVICE_CLASS : uint8_t
+	{
+		NONE = 0x00,
+		IAD  = 0xEF,
+		VENDOR = 0xFF
+	};
+
+	enum class DEVICE_SUBCLASS : uint8_t
+	{
+		NONE = 0x00,
+		IAD  = 0x02,
+		VENDOR = 0xFF
+	};
+
+	enum class DEVICE_PROTOCOL : uint8_t
+	{
+		NONE = 0x00,
+		IAD  = 0x01,
+		VENDOR = 0xFF
+	};
+
 	bool serialize(Device_descriptor_array* const out_array) const;
 	bool serialize(Buffer_adapter_tx* const out_array) const override;
 	bool deserialize(const Device_descriptor_array& array);
@@ -30,7 +50,7 @@ public:
 	}
 
 	static constexpr uint8_t bLength = 18;
-	static constexpr uint8_t bDescriptorType = 0x01;
+	static constexpr uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::DEVICE);
 	uint16_t bcdUSB;
 	uint8_t  bDeviceClass;
 	uint8_t  bDeviceSubClass;

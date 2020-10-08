@@ -1,5 +1,7 @@
 add_library(usb_dev_cpp
+	src/descriptor/Binary_object_store.cpp
 	src/descriptor/Configuration_descriptor.cpp
+	src/descriptor/Device_capability.cpp
 	src/descriptor/Device_descriptor.cpp
 	src/descriptor/Endpoint_descriptor.cpp
 	src/descriptor/Interface_descriptor.cpp

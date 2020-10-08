@@ -7,6 +7,7 @@
 #pragma once
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+#include "libusb_dev_cpp/core/usb_common.hpp"
 
 #include <array>
 
@@ -33,7 +34,7 @@ public:
 	}
 
 	static constexpr uint8_t bLength = 9;
-	static constexpr uint8_t bDescriptorType = 0x04;
+	static constexpr uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::INTERFACE);
 	uint8_t bInterfaceNumber;
 	uint8_t bAlternateSetting;
 	uint8_t bNumEndpoints;

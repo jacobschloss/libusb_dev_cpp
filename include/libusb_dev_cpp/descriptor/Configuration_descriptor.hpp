@@ -7,6 +7,7 @@
 #pragma once
 
 #include "libusb_dev_cpp/descriptor/Descriptor_base.hpp"
+#include "libusb_dev_cpp/core/usb_common.hpp"
 
 #include "common_util/Intrusive_list.hpp"
 
@@ -50,8 +51,14 @@ public:
 		return (ma + 1U) / 2U;
 	}
 
+	// USB 3.2 Revision 1.0 Table 9-22
+	static constexpr uint8_t ma_to_maxpower_genx(const uint8_t ma)
+	{
+		return (ma + 7U) / 8U;
+	}
+
 	static constexpr uint8_t bLength = 9;
-	static constexpr uint8_t bDescriptorType = 0x02;
+	static constexpr uint8_t bDescriptorType = static_cast<uint8_t>(USB_common::DESCRIPTOR_TYPE::CONFIGURATION);
 	uint16_t wTotalLength;
 	uint8_t bNumInterfaces;
 	uint8_t bConfigurationValue;
