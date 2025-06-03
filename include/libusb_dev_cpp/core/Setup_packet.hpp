@@ -56,11 +56,11 @@ public:
 
 	enum class TEST_MODE_SELECTOR
 	{
-		TEST_J            = 0x01,
-		TSET_K            = 0x02,
-		TEST_SE0_NAK      = 0x03,
-		TEST_PACKET       = 0x04,
-		TEST_FORCE_ENABLE = 0x05,
+		TEST_MODE_TEST_J       = 0x01,
+		TEST_MODE_TEST_K       = 0x02,
+		TEST_MODE_SE0_NAK      = 0x03,
+		TEST_MODE_PACKET       = 0x04,
+		TEST_MODE_FORCE_ENABLE = 0x05,
 	};
 
 	bool serialize(Setup_packet_array* const out_array);
